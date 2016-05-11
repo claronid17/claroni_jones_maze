@@ -2,23 +2,45 @@
 
 
 ;Authors: Dan Claroni and Rob Jones
+;Our maze problem "claroni_jones_maze"
+;want to solve a simple maze
+;ex
 
-;start of our basic implementaion project: "genetic-prog-project"
+;maze 1
+;||||||||||||||||||||||||||||||||||||
+;|S                                F|
+;||||||||||||||||||||||||||||||||||||
 
-; want to solve the problem x^3 + x + 3
-;
-;   levels
-;   0                      +
-;                        /   \
-;   1                  *      +
-;                    /  \    / \
-;   2              x    *   x  3
-;                      / \
-;   3                 x  x
+;maze 2
+;|||||||||||||||||||
+;|S               ||
+;|||||||||||||||| ||
+;|||||||||||||||| ||
+;|||||||||||||||| ||
+;|||||||||||||||| ||
+;||||||||||||||||F||
+;|||||||||||||||||||
+
+;maze 3
+;||||||||||||||||||||||||||||||
+;|S               ||         F|
+;|||||||||||||||| || ||||||||||
+;|||||||||||||||| || ||||||||||
+;|||||||||||||||| || ||||||||||
+;|||||||||||||||| || ||||||||||
+;||||||||||||||||    ||||||||||
+;||||||||||||||||||||||||||||||
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; helper functions
+
+(def maze1
+(map vec 
+'("||||||||||||||||||||||||||||||||||||"
+  "|S                                F|"
+  "||||||||||||||||||||||||||||||||||||"))) ;look up do-seek
 
 (defn abs
   "Absolute value of x"
@@ -42,23 +64,6 @@
   )
 
 
-
-;;;  safe-divide, erc ;;; 
-
-
-(defn safe-divide
-  "Division that handels case of divide by 0
-   by returning 1 if 0 is the divisor"
-  [dividend divisor]
-  (if (= divisor 0)
-    1
-    (/ dividend divisor)))
-
-(defn erc
-  "Generates a random number between min and max (inclusive)"
-  [min max]
-  (rand-nth (range min (+ max 1))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;;;;;;;;;;;;; evaluating programs
@@ -71,7 +76,14 @@
          the argument list below to something other than [x]!"
   [program]                                                                
   (eval (list 'fn                                                          ; is basiccally the same thing as doung (fn [x] program))
-              '[x]
+              '[wall-l
+                wall-r
+                wall-u
+                wall-d
+                finish-l
+                finish-r
+                finish-u
+                finish-d]
               program)))
 
 
@@ -83,13 +95,14 @@
    start of the range (inclusive), fourth is the end of the range function (exclusive)"
   ([program x-value]                    ;evaluates with x-value
   (let [prog-fn (program-to-fn program)]
-  (prog-fn x-value)))
-  ([map program end]                    ;"map" argument can be anything... it just performs the map function 
-  (let [prog-fn (program-to-fn program)]
-  (map prog-fn (range end))))
-  ([map program start end]              ; allows you to map a range of x-values from any start-end pair
-  (let [prog-fn (program-to-fn program)]
-  (map prog-fn (range start end))))
+    (prog-fn (wall-l-check gamestate)
+             (wall-r-check gamestate)
+             (wall-u-check gamestate)
+             (wall-d-check gamestate)
+             (finish-l-check gamestate)
+             (finish-r-check gamestate)
+             (finish-u-check gamestate)
+             (finish-d-check gamestate))))
   )
 
 (defn evaluate-population
@@ -110,14 +123,27 @@
 
 ;;;; Terminal, function, and primitive sets  and decided range for max-depth ;;;
 
-; list of terminals
-; erc [-10, 10], x
+(defn move-left
+  "Moves player left"
+  []
+  "I moved left")
 
-; list of functions
-; +, -, /, *, exp
+(defn wall-l
+  "If in the condition branch of an if statement this functions returns a
+   boolean. Otherwise it moves to the left."
+  []
+  (rand)
+  false
+  
+  )
+
+  
+;;;;;;;;;;;;;;;;;;;;; terminal sets and functions sets
+
 
 (def terminal-set
-  '((erc -10 10) x))
+  '((wall-l gamestate) wall-r wall-u wall-d finish-l finish-r finish-u
+                       finish-d))
 (defn rand-term
   "returns a ranom value in the terminal set"
   []
@@ -125,7 +151,7 @@
 
 
 (def function-set
-  '(+ - safe-divide *))
+  '(if and))
 (defn rand-fn
   "returns a ranom value in the function set"
   []
@@ -136,7 +162,7 @@
   (concat terminal-set function-set))
 (defn rand-prim
   "returns a ranom value in the primitive set"
-  []
+  []make-prog
   (rand-nth primitive-set))
 
 
@@ -152,44 +178,32 @@
 (defn full                                        ; yay!!! full works
   "Builds a function using Full method"
   [max-d]
-  (let [d         max-d
-        terminal1 (if (= (rand-term) '(erc -10 10)) ;made this so erc can be evaluated
-                    (erc -10 10)
-                    'x)
-        terminal2 (if (= (rand-term) '(erc -10 10)) ;made this so erc can be evaluated
-                    (erc -10 10)
-                    'x)]
-    (cond
-      (= d 0) terminal1                              ;terminal if leave
-      (= d 1) (list (rand-fn) terminal1 terminal2)   ; function with two terminals if 1 up from frontier
-      :else (list (rand-fn) (full (dec d)) (full (dec d)))  ;recursion otherwise
-      )
+  (cond
+    (= max-d 0) (rand-term)                              ;terminal if leave
+    (= max-d 1) (list (rand-fn) (rand-term)(rand-term)(rand-term))   ; function with two terminals if 1 up from frontier
+    :else (list (rand-fn) (full (dec max-d)) (full (dec max-d))(full (dec max-d)))  ;recursion otherwise
     )
   )
+
 
   
 (defn grow                                                                   ; yay! grow works
   "Builds a function using Grow method, by returning one value at a time"
   [max-d]
   (let [d max-d
-        odds (rand)
-        terminal1 (if (= (rand-term) '(erc -10 10))
-                    (erc -10 10)
-                    'x)
-        terminal2 (if (= (rand-term) '(erc -10 10))
-                    (erc -10 10)
-                    'x)]
-    (cond
-      (= d 0) terminal1
-      (= d 1) (if (< odds 0.5)
-                (list (rand-fn) terminal1 terminal2)
-                terminal1)
-      :else (if (< odds 0.5)
-              (list (rand-fn) (grow (dec d)) (grow (dec d)))
-              terminal1)
-      )
+        odds (rand)]
+  (cond
+    (= d 0) (rand-term)
+    (= d 1) (if (< odds 0.5)
+              (list (rand-fn) (rand-term) (rand-term) (rand-term))
+              (rand-term))
+    :else (if (< odds 0.5)
+            (list (rand-fn) (grow (dec d)) (grow (dec d)) (grow (dec d)))
+            (rand-term))
     )
+   )
   )
+
 
 
 (defn ramped-h-h                                              
