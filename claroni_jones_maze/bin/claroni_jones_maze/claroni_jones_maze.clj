@@ -7,9 +7,9 @@
 ;ex
 
 ;maze 1
-;||||||||||||||||||||||||||||||||||||
-;|S                                F|
-;||||||||||||||||||||||||||||||||||||
+;||||||||||
+;|S      F|
+;||||||||||
 
 ;maze 2
 ;|||||||||||||||||||
@@ -35,12 +35,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; helper functions
+(defn get-maze-symbol
+  "Returns the item in the maze at the row, column location."
+  [maze row column]
+  (nth (nth maze row) column))
 
-(def maze1
-(map vec 
-'("||||||||||||||||||||||||||||||||||||"
-  "|S                                F|"
-  "||||||||||||||||||||||||||||||||||||"))) ;look up do-seek
+(def maze1 
+       '([| | | | | | | | | |]  
+         [| * _ _ _ _ _ _ F |] 
+         [| | | | | | | | | |]))
+     
 
 (defn abs
   "Absolute value of x"
@@ -70,10 +74,9 @@
 
 
 (defn program-to-fn                                                  ;this  will turn the prog above into an actual function using eval
-  "Takes a GP program represented as a list, with input x,                  
-   and transforms it into a function that can be called on an input.
-   NOTE: If your GP uses variables other than x, will need to change
-         the argument list below to something other than [x]!"
+  "Takes a GP program represented as a list, with inputs wall-l 
+   wall-r wall-u wall-d finish-l finish-r finish-u finish-d,                  
+   and transforms it into a function that can be called on an input."
   [program]                                                                
   (eval (list 'fn                                                          ; is basiccally the same thing as doung (fn [x] program))
               '[wall-l
@@ -93,7 +96,7 @@
    the thrid should be the desired range to map the function along.
    With 4 inputs, the first is the map function, second is the program, third is the 
    start of the range (inclusive), fourth is the end of the range function (exclusive)"
-  ([program x-value]                    ;evaluates with x-value
+  ([program gamestate]                    ; wall-l-check will return a vector (and all others will too
   (let [prog-fn (program-to-fn program)]
     (prog-fn (wall-l-check gamestate)
              (wall-r-check gamestate)
@@ -104,6 +107,8 @@
              (finish-u-check gamestate)
              (finish-d-check gamestate))))
   )
+;tester
+(evaluate (simulator maze1))
 
 (defn evaluate-population
   "Takes a population and an x-value and evaluates every individual program."
