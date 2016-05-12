@@ -34,7 +34,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-; helper functions
+; maze and helpers
+
 (defn get-maze-symbol
   "Returns the item in the maze at the row, column location."
   [maze row column]
@@ -66,6 +67,8 @@
       )
     )
   )
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,8 +110,26 @@
              (finish-u-check gamestate)
              (finish-d-check gamestate))))
   )
-;tester
-(evaluate (simulator maze1))
+
+(defn andd
+  "Our own and function that takes 3 arguments and returns the first vector that has false as its first item
+   or the last vector that has true as the first item"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)
+        bool2 (first arg2)
+        bool3 (first arg3 )]
+    (cond
+      (= bool1 false) arg1
+      (= bool2 false) arg2
+      (= bool3 false) arg3
+      :else arg3)))
+
+      
+(defn perform-program
+  "Returns the move (second object in the vector) returned by evaluate"
+  [program]
+  (second (evaluate program)))
+
 
 (defn evaluate-population
   "Takes a population and an x-value and evaluates every individual program."
@@ -128,9 +149,9 @@
 
 ;;;; Terminal, function, and primitive sets  and decided range for max-depth ;;;
 
-(defn move-left
+(defn move-l-check
   "Moves player left"
-  []
+  [gamestate]
   "I moved left")
 
 (defn wall-l
@@ -147,7 +168,7 @@
 
 
 (def terminal-set
-  '((wall-l gamestate) wall-r wall-u wall-d finish-l finish-r finish-u
+  '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
                        finish-d))
 (defn rand-term
   "returns a ranom value in the terminal set"
@@ -156,7 +177,7 @@
 
 
 (def function-set
-  '(if and))
+  '(iff andd orr))
 (defn rand-fn
   "returns a ranom value in the function set"
   []
