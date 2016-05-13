@@ -1,5 +1,6 @@
 (ns robert-jones.simulator)
 
+
 (def maze1
   '(
      [| | | | | | | | | |]
@@ -41,6 +42,19 @@
       (= move :R) (not (= '| (get-maze-symbol maze [player-column (+ player-row 1)])))
       )))
 
+(defn switch-rows
+  "moves character between rows."
+  [source destination col]
+  (loop [new-source []
+         new-destination []
+         index 0]
+    (cond 
+      (= index (count source)) [new-source new-destination]
+      (= index col) (recur (conj new-source '_) (conj new-destination '*) (inc index))
+      :else (recur (conj new-source (nth source index)) 
+                   (conj new-destination (nth destination index)) 
+                   (inc index)))))
+
 (defn move-player
   [maze move]
   (cond
@@ -59,7 +73,12 @@
 
 (defn move-player
   [maze move]
-  (
+  (loop [new-maze []
+         row 0]
+    (if (= row (count maze))
+      new-maze
+      (if (= row (+ (second (get-player maze)) 1))
+        (switch-rows (nth maze (second (get-player maze))) (nth maze
                     
   
 
