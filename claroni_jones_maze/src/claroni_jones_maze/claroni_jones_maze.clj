@@ -59,6 +59,43 @@
 
 
 
+(defn abs
+  "Absolute value of x"
+  [x]
+  (max x (- 0 x)))
+
+
+
+(defn abs-list-subtraction
+  "Subtracts the values of two lists and returns a list of the absolute value
+   of the subtraction"
+  [list1 list2]
+  (loop [i (- (count list1) 1)
+         lst '()]
+    (if (< i 0)
+      lst
+      (recur (dec i)
+             (conj lst (abs (- (nth list1 i) (nth list2 i))))
+             )
+      )
+    )
+  )
+
+(defn list-subtraction
+  "Subtracts the values of two lists and returns a list of the absolute value
+   of the subtraction"
+  [list1 list2]
+  (loop [i (- (count list1) 1)
+         lst '()]
+    (if (< i 0)
+      lst
+      (recur (dec i)
+             (conj lst (- (nth list1 i) (nth list2 i)))
+             )
+      )
+    )
+  )
+
 
 (defn get-maze-symbol
   [maze pos-vec]
@@ -540,47 +577,6 @@ maze
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-(defn abs
-  "Absolute value of x"
-  [x]
-  (max x (- 0 x)))
-
-
-
-(defn abs-list-subtraction
-  "Subtracts the values of two lists and returns a list of the absolute value
-   of the subtraction"
-  [list1 list2]
-  (loop [i (- (count list1) 1)
-         lst '()]
-    (if (< i 0)
-      lst
-      (recur (dec i)
-             (conj lst (abs (- (nth list1 i) (nth list2 i))))
-             )
-      )
-    )
-  )
-
-(defn list-subtraction
-  "Subtracts the values of two lists and returns a list of the absolute value
-   of the subtraction"
-  [list1 list2]
-  (loop [i (- (count list1) 1)
-         lst '()]
-    (if (< i 0)
-      lst
-      (recur (dec i)
-             (conj lst (- (nth list1 i) (nth list2 i)))
-             )
-      )
-    )
-  )
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;;;;;;;;;;;;; evaluating programs
@@ -623,9 +619,61 @@ maze
 
 (defn perform-program
   "Returns the move (second object in the vector) returned by evaluate"
-  [program]
-  (second (evaluate program)))
+  [program gamestate]
+  (second (evaluate program gamestate)))
+;tester
+maze1
+(perform-program '(andd wall-r wall-d wall-d) (move-player maze1 :R))
 
+
+(defn print-maze
+  "Prints the maze in the right order and allignment"
+  [maze]
+  (loop [maze-str nil
+         first-m (first maze)
+         rest-m (rest maze)]
+    (if (empty? rest-m)
+      (println (str maze-str first-m "\n"))
+      (recur
+        (str maze-str first-m "\n")
+        (first rest-m)
+        (rest rest-m)
+        )
+      )
+    )
+  )
+;tester
+(print-maze maze1)
+    
+  
+
+(defn state-steps
+  "Prints the state of a maze after each move that a program produces"
+  [maze program]
+  (let [finish (get-finish maze)]
+    (loop [gamestate maze
+           moves 0]
+      (print-maze gamestate)
+      (let [player (get-player gamestate)]
+        (if(= finish player) 
+          (println (str "###########################################\n" (str "Maze completed in " moves " moves!")))
+          (let [move (perform-program program gamestate)]           
+            
+            (recur 
+              (move-player gamestate move)
+              (inc moves)
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+;tester
+maze1
+(state-steps maze1 '(andd wall-r wall-d wall-d)) 
+  
+          
 
 
 
@@ -787,7 +835,7 @@ maze
   "Returns the fitness of a program ."
   [program]
   (let [prog-values (evaluate map program -5 6)]                   ;the evaluated program from -5 to 5 (our predetermined range)
-    (apply + (list-subtraction prog-values solution-set))))
+    (apply + (abs-list-subtraction prog-values solution-set))))
 
 
 (defn population-fitness                                                  ;mostly helpful for visualization of best functions
