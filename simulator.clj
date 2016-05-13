@@ -1,9 +1,22 @@
 (ns robert-jones.simulator)
+
 (def maze1
-  '(
+  [
      [| | | | | | | | | |]
      [| * _ _ _ _ _ _ F |]
-     [| | | | | | | | | |]))
+     [| | | | | | | | | |]])
+
+(def maze1
+  [
+     ['| '| '| '| '| '| '| '| '| '|]
+     ['| '* '_ '_ '_ '_ '_ '_ 'F '|]
+     ['| '| '| '| '| '| '| '| '| '|]])
+
+(def maze2
+  [
+     ['| '| '| '| '| '| '| '| '| '|]
+     ['| '_ '* '_ '_ '_ '_ '_ 'F '|]
+     ['| '| '| '| '| '| '| '| '| '|]])
 
 (def maze2
   '(
@@ -12,32 +25,31 @@
      [| | | | | | | | | |]))
 
 (defn get-maze-symbol
-  "Returns the item in the maze at the row, column location."
-  [maze row column]
-  (nth (nth maze row) column))
-
-(defn get-maze-symbol
   [maze pos-vec]
   (nth (nth maze (first pos-vec)) (second pos-vec)))
+
+
 
 (defn get-player
   "Returns coordinates of the player in the maze"
   [maze]
   (loop [layer 0]
     (if (= (some #{'*} (nth maze layer)) '*)
-      [(.indexOf (nth maze layer) '*) layer] ;[column row]
+      [layer (.indexOf (nth maze layer) '*)] 
       (recur (inc layer)))))
 
+
 (defn check-for-wall
-  "Checks if there is a wall in the direction of the attempted move."
+  "Checks if there is a wall in the direction of the attempted move. 
+   Returns true if there is a wall in the move-direction and false if there is not"
   [maze move]
-  (let [player-column (first (get-player maze))
-        player-row (second (get-player maze))]
+  (let [player-row (first (get-player maze))
+        player-column (second (get-player maze))]
     (cond
-      (= move :U) (not (= '| (get-maze-symbol maze [(- player-column 1) player-row])))
-      (= move :D) (not (= '| (get-maze-symbol maze [(+ player-column 1) player-row])))
-      (= move :L) (not (= '| (get-maze-symbol maze [player-column (- player-row 1)])))
-      (= move :R) (not (= '| (get-maze-symbol maze [player-column (+ player-row 1)])))
+      (= move :U) [(= '| (get-maze-symbol maze [(- player-column 1) player-row])) :U]
+      (= move :D) [(= '| (get-maze-symbol maze [(+ player-column 1) player-row])) :D]
+      (= move :L) [(= '| (get-maze-symbol maze [player-column (- player-row 1)])) :L]
+      (= move :R) [(= '| (get-maze-symbol maze [player-column (+ player-row 1)])) :R]
       )))
 
 (defn switch-rows
@@ -68,11 +80,11 @@
 
 (defn move-player
   [maze move]
-  (let [player-row (second (get-player maze))
-        player-column (first (get-player maze))]
+  (let [player-column (second (get-player maze))
+        player-row (first (get-player maze))]
     (cond
       (= move :U)
-      (if (not (first (check-for-wall maze :U)))
+      (if  (first (check-for-wall maze :U))
         (move-player maze :R)
         (loop [new-maze []
                row 0]
@@ -85,7 +97,7 @@
             :else (recur (conj new-maze (nth maze row)) (inc row))))
         )
       (= move :D)
-      (if (not (first (check-for-wall maze :D)))
+      (if (first (check-for-wall maze :D))
         (move-player maze :L)
         (loop [new-maze []
                row 0]
@@ -98,7 +110,7 @@
             :else (recur (conj new-maze (nth maze row)) (inc row))))
         )
       (= move :L)
-      (if (not (first (check-for-wall maze :L)))
+      (if (first (check-for-wall maze :L))
         (move-player maze :U)
         (loop [new-maze []
                row 0]
@@ -109,7 +121,7 @@
             :else (recur (conj new-maze (nth maze row)) (inc row))))
         )
       (= move :R)
-      (if (not (first (check-for-wall maze :R)))
+      (if (first (check-for-wall maze :R))
         (move-player maze :D)
         (loop [new-maze []
                row 0]
