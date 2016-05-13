@@ -4,53 +4,498 @@
 ;Authors: Dan Claroni and Rob Jones
 ;Our maze problem "claroni_jones_maze"
 ;want to solve a simple maze
-;ex
-
-;maze 1
-;||||||||||
-;|S      F|
-;||||||||||
-
-;maze 2
-;|||||||||||||||||||
-;|S               ||
-;|||||||||||||||| ||
-;|||||||||||||||| ||
-;|||||||||||||||| ||
-;|||||||||||||||| ||
-;||||||||||||||||F||
-;|||||||||||||||||||
-
-;maze 3
-;||||||||||||||||||||||||||||||
-;|S               ||         F|
-;|||||||||||||||| || ||||||||||
-;|||||||||||||||| || ||||||||||
-;|||||||||||||||| || ||||||||||
-;|||||||||||||||| || ||||||||||
-;||||||||||||||||    ||||||||||
-;||||||||||||||||||||||||||||||
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; maze and helpers
 
-(defn get-maze-symbol
-  "Returns the item in the maze at the row, column location."
-  [maze row column]
-  (nth (nth maze row) column))
 
 (def maze1 
-       '([| | | | | | | | | |]  
-         [| * _ _ _ _ _ _ F |] 
-         [| | | | | | | | | |]))
-     
+  '([| | | | | | | | | |]  
+     [| * _ _ _ _ _ _ F |] 
+     [| | | | | | | | | |]))
+(def maze2 
+  '([| | | | | | | | | |]  
+     [| F _ _ _ _ _ _ * |] 
+     [| | | | | | | | | |]))
+
+(def maze3
+  '([| | | | | | | | | |]
+     [| * _ _ _ _ _ _ | |]
+     [| | | | | | | _ | |]
+     [| | | | | | | _ | |]
+     [| | | | | | | F | |]
+     [| | | | | | | | | |]))
+(def maze4
+  '([| | | | | | | | | |]
+     [| F _ _ _ _ _ _ | |]
+     [| | | | | | | _ | |]
+     [| | | | | | | _ | |]
+     [| | | | | | | * | |]
+     [| | | | | | | | | |]))
+
+(def maze5
+  '([| | | | | | | | | |]
+     [| * _ _ | | _ _ F |]
+     [| | | _ | | _ | | |]
+     [| | | _ | | _ | | |]
+     [| | | _ _ _ _ | | |]
+     [| | | | | | | | | |]))
+(def maze6
+  '([| | | | | | | | | |]
+     [| F _ _ | | _ _ * |]
+     [| | | _ | | _ | | |]
+     [| | | _ | | _ | | |]
+     [| | | _ _ _ _ | | |]
+     [| | | | | | | | | |]))
+(def maze7
+  '( [| | | | | | | | | |]
+     [| F _ _ | | _ _ _ |]
+     [| | | _ | | _ | | |]
+     [| | | _ | | * | | |]
+     [| | | _ _ _ _ | | |]
+     [| | | | | | | | | |]))
+
+
+
+
+(defn get-maze-symbol
+  [maze pos-vec]
+  (nth (nth maze (first pos-vec)) (second pos-vec)))
+;tester
+(get-maze-symbol maze1 [0 3])
+
+
+
+(defn get-player
+  "Returns coordinates of the player in the maze"
+  [maze]
+  (loop [layer 0]
+    (if (= (some #{'*} (nth maze layer)) '*)
+      (into [] (reverse[(.indexOf (nth maze layer) '*) layer])) ;[column row]
+      (recur (inc layer)))))
+;tester
+(get-player maze2)
+
+
+
+(defn check-for-wall
+  "Checks if there is a wall in the direction of the attempted move. 
+   Returns true if there is a wall in the move-direction and false if there is not"
+  [maze move]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))]
+    (cond
+      (= move :U) (= '| (get-maze-symbol maze [(- player-column 1) player-row]))
+      (= move :D) (= '| (get-maze-symbol maze [(+ player-column 1) player-row]))
+      (= move :L) (= '| (get-maze-symbol maze [player-column (- player-row 1)]))
+      (= move :R) (= '| (get-maze-symbol maze [player-column (+ player-row 1)]))
+      )))
+;tester
+(check-for-wall maze7 :U)
+(get-player maze7)
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;                MOVE PLAYER START
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+(defn move-player
+  "Moves the player in the direction of the move and returns the new maze"
+  [maze move]
+  (loop [new-maze '()
+         rest-maze maze
+         row 0
+         new-line []
+         rest-line (first maze)
+         column 0
+         dir move]
+    (cond 
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; move up     
+      (= move :U) (cond
+                   
+                    (check-for-wall maze :U) (move-player maze :R)
+                   
+                    (= row (count maze)) new-maze 
+                    ;condition 2
+                    ;if reached the max row return the new maze
+                   
+                    (>= (.indexOf (nth maze row) '*) 0) (cond 
+                                                          ;condition 3
+                                                          ; if the star is in the current line 
+                                                          (= column (count (first maze))) (recur                                           
+                                                                                            ;reached the last column recur to the next row and reset column, and new-line
+                                                                                            (reverse (conj (reverse new-maze) new-line))
+                                                                                            (rest rest-maze)
+                                                                                            (inc row)
+                                                                                            []
+                                                                                            (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                              (nth maze (inc row))
+                                                                                              [])                                                                                  
+                                                                                            0
+                                                                                            dir)
+                                                          (= (first rest-line) '*) (recur
+                                                                                     ;add the underscore where star used to be
+                                                                                     new-maze
+                                                                                     rest-maze
+                                                                                     row
+                                                                                     (conj new-line '_)
+                                                                                     (rest rest-line)
+                                                                                     (inc column)
+                                                                                     dir)
+                                                          :else (recur
+                                                                  ;or fill the maze in how it is supposed to be
+                                                                  new-maze
+                                                                  rest-maze
+                                                                  row
+                                                                  (conj new-line (first rest-line))
+                                                                  (rest rest-line)
+                                                                  (inc column)
+                                                                  dir)
+                                                          )
+                    (= row (- (count maze) 1)) (recur
+                                                 ;condition 4
+                                                 ;reached the last row 
+                                                 (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                                 (rest rest-maze) ;potential problem when we reach the last row
+                                                 (inc row)
+                                                 []
+                                                 (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                   (nth maze (inc row)) ;the next line
+                                                   []) ;or nothing
+                                                 0
+                                                 dir)
+                   
+                   
+                    (< (.indexOf (nth maze (+ row 1)) '*) 0) (recur
+                                                               ;condition5
+                                                               ;if star is not in next line add the entire current line to the maze 
+                                                               (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                                               (rest rest-maze) ;potential problem when we reach the last row
+                                                               (inc row)
+                                                               []
+                                                               (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                 (nth maze (inc row)) ;the next line
+                                                                 []) ;or nothing
+                                                               0
+                                                               dir)
+                   
+                   
+                    (>= (.indexOf (nth maze (+ row 1)) '*) 0)  (cond
+                                                                 ;condition 6
+                                                                 ;if the star is in the next line
+                                                                 (= column (count (first maze))) (recur                                           
+                                                                                                   ;reached the last column so go to next row
+                                                                                                   (reverse (conj (reverse new-maze) new-line))
+                                                                                                   (rest rest-maze)
+                                                                                                   (inc row)
+                                                                                                   []
+                                                                                                   (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                                     (nth maze (inc row))
+                                                                                                     [])
+                                                                                                   0
+                                                                                                   dir)
+                                                                 (= column (.indexOf (nth maze (+ row 1)) '*)) (recur                             
+                                                                                                                 ;reached location where the star should be
+                                                                                                                 new-maze
+                                                                                                                 rest-maze
+                                                                                                                 row
+                                                                                                                 (conj new-line '*)
+                                                                                                                 (rest rest-line)
+                                                                                                                 (inc column)
+                                                                                                                 dir)
+                                                                 :else (recur
+                                                                         new-maze
+                                                                         rest-maze
+                                                                         row
+                                                                         (conj new-line (first rest-line))
+                                                                         (rest rest-line)
+                                                                         (inc column)
+                                                                         dir)
+                                                                 )
+                    )
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+      ;move right
+      
+      (= move :R)
+        (cond 
+          (check-for-wall maze :R) (move-player maze :D)
+          
+          (= row (count maze)) new-maze                                                                                 
+          ;if reached the max row
+          
+          (>= (.indexOf (nth maze row) '*) 0) (cond                                                                         
+                                                ; if the star is in the current line 
+                                                (= column (count (first maze))) (recur                                           
+                                                                                  ;reached the last column recur to the next row and reset column, and new-line
+                                                                                  (reverse (conj (reverse new-maze) new-line))
+                                                                                  (rest rest-maze)
+                                                                                  (inc row)
+                                                                                  []
+                                                                                  (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                    (nth maze (inc row))
+                                                                                    [])                                                                                  
+                                                                                  0
+                                                                                  dir)
+                                                (= (first rest-line) '*) (recur
+                                                                           ;add the underscore where star used to be
+                                                                           new-maze
+                                                                           rest-maze
+                                                                           row
+                                                                           (into new-line '(_ *))
+                                                                           (rest (rest rest-line))
+                                                                           (inc (inc column))
+                                                                           dir)
+                                                :else (recur
+                                                        ;or fill the maze in how it is supposed to be
+                                                        new-maze
+                                                        rest-maze
+                                                        row
+                                                        (conj new-line (first rest-line))
+                                                        (rest rest-line)
+                                                        (inc column)
+                                                        dir)
+                                                )
+          (= row (- (count maze) 1)) (recur
+                                       ;reached the last row 
+                                       (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                       (rest rest-maze) 
+                                       (inc row)
+                                       []
+                                       (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                         (nth maze (inc row)) ;the next line
+                                         []) ;or nothing
+                                       0
+                                       dir)
+          (< (.indexOf (nth maze row) '*) 0) (recur
+                                               ;star is not in current row
+                                               (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                               (rest rest-maze) 
+                                               (inc row)
+                                               []
+                                               (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                 (nth maze (inc row)) ;the next line
+                                                 []) ;or nothing
+                                               0
+                                               dir)
+          
+          )
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+        ;move down
+        
+        (= move :D) (cond  
+                      
+                      (check-for-wall maze :D) (move-player maze :L)
+                      
+                      ;want to do this one backwards so start from the bottom one and go until row is less than 0
+                      
+                      
+                      (= row (count maze)) new-maze 
+                      ;condition 2
+                      ;if reached the max row return the new maze
+                      
+                      (>= (.indexOf (nth maze row) '*) 0) (cond 
+                                                            ;condition 3
+                                                            ; if the star is in the current line 
+                                                            (= column (count (first maze))) (recur                                           
+                                                                                              ;reached the last column recur to the next row and reset column, and new-line
+                                                                                              (reverse (conj (reverse new-maze) new-line))
+                                                                                              (rest rest-maze)
+                                                                                              (inc row)
+                                                                                              []
+                                                                                              (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                                (nth maze (inc row))
+                                                                                                [])                                                                                  
+                                                                                              0
+                                                                                              dir)
+                                                            (= (first rest-line) '*) (recur
+                                                                                       ;add the underscore where star used to be
+                                                                                       new-maze
+                                                                                       rest-maze
+                                                                                       row
+                                                                                       (conj new-line '_)
+                                                                                       (rest rest-line)
+                                                                                       (inc column)
+                                                                                       dir)
+                                                            :else (recur
+                                                                    ;or fill the maze in how it is supposed to be
+                                                                    new-maze
+                                                                    rest-maze
+                                                                    row
+                                                                    (conj new-line (first rest-line))
+                                                                    (rest rest-line)
+                                                                    (inc column)
+                                                                    dir)
+                                                            )
+                      (= row (- (count maze) 1)) (recur
+                                                   ;condition 4
+                                                   ;reached the last row 
+                                                   (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                                   (rest rest-maze) ;potential problem when we reach the last row
+                                                   (inc row)
+                                                   []
+                                                   (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                     (nth maze (inc row)) ;the next line
+                                                     []) ;or nothing
+                                                   0
+                                                   dir)
+                      
+                      
+                      (< (.indexOf (nth maze (+ row 1)) '*) 0) (recur
+                                                                 ;condition5
+                                                                 ;if star is not in next line add the entire current line to the maze 
+                                                                 (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                                                 (rest rest-maze) ;potential problem when we reach the last row
+                                                                 (inc row)
+                                                                 []
+                                                                 (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                   (nth maze (inc row)) ;the next line
+                                                                   []) ;or nothing
+                                                                 0
+                                                                 dir)
+                      
+                      
+                      (>= (.indexOf (nth maze (+ row 1)) '*) 0)  (cond
+                                                                   ;condition 6
+                                                                   ;if the star is in the next line
+                                                                   (= column (count (first maze))) (recur                                           
+                                                                                                     ;reached the last column so go to next row
+                                                                                                     (reverse (conj (reverse new-maze) new-line))
+                                                                                                     (rest rest-maze)
+                                                                                                     (inc row)
+                                                                                                     []
+                                                                                                     (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                                       (nth maze (inc row))
+                                                                                                       [])
+                                                                                                     0
+                                                                                                     dir)
+                                                                   (= column (.indexOf (nth maze (+ row 1)) '*)) (recur                             
+                                                                                                                   ;reached location where the star should be
+                                                                                                                   new-maze
+                                                                                                                   rest-maze
+                                                                                                                   row
+                                                                                                                   (conj new-line '*)
+                                                                                                                   (rest rest-line)
+                                                                                                                   (inc column)
+                                                                                                                   dir)
+                                                                   :else (recur
+                                                                           new-maze
+                                                                           rest-maze
+                                                                           row
+                                                                           (conj new-line (first rest-line))
+                                                                           (rest rest-line)
+                                                                           (inc column)
+                                                                           dir)
+                                                                   )
+                      )
+        
+        ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+        ; move left
+        
+        (= move :L)
+        
+        (cond 
+          (check-for-wall maze :L) (move-player maze :U)
+          
+          (= row (count maze)) new-maze                                                                                 
+          ;if reached the max row
+          
+          (>= (.indexOf (nth maze row) '*) 0) (cond                                                                         
+                                                ; if the star is in the current line 
+                                                (= column (count (first maze))) (recur                                           
+                                                                                  ;reached the last column recur to the next row and reset column, and new-line
+                                                                                  (reverse (conj (reverse new-maze) new-line))
+                                                                                  (rest rest-maze)
+                                                                                  (inc row)
+                                                                                  []
+                                                                                  (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                                                    (nth maze (inc row))
+                                                                                    [])                                                                                  
+                                                                                  0
+                                                                                  dir)
+                                                (= (first (rest rest-line)) '*) (recur
+                                                                                  ;add the underscore where star used to be
+                                                                                  new-maze
+                                                                                  rest-maze
+                                                                                  row
+                                                                                  (into new-line '(* _))
+                                                                                  (rest (rest rest-line))
+                                                                                  (inc (inc column))
+                                                                                  dir)
+                                                :else (recur
+                                                        ;or fill the maze in how it is supposed to be
+                                                        new-maze
+                                                        rest-maze
+                                                        row
+                                                        (conj new-line (first rest-line))
+                                                        (rest rest-line)
+                                                        (inc column)
+                                                        dir)
+                                                )
+          (= row (- (count maze) 1)) (recur
+                                       ;reached the last row 
+                                       (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                       (rest rest-maze) 
+                                       (inc row)
+                                       []
+                                       (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                         (nth maze (inc row)) ;the next line
+                                         []) ;or nothing
+                                       0
+                                       dir)
+          
+          (< (.indexOf (nth maze row) '*) 0) (recur
+                                               ;star is not in current row
+                                               (reverse (conj (reverse new-maze) (first rest-maze)))               
+                                               (rest rest-maze) 
+                                               (inc row)
+                                               []
+                                               (if (< (inc row) (count maze)) ;if the next row is still in maze.. set the rest-line to be
+                                                 (nth maze (inc row)) ;the next line
+                                                 []) ;or nothing
+                                               0
+                                               dir)
+          
+          )
+        
+    )
+  )
+  )
+
+  
+    
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;                            MOVE PLAYER END
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn abs
   "Absolute value of x"
   [x]
   (max x (- 0 x)))
+
 
 
 (defn list-subtraction
@@ -99,36 +544,26 @@
    the thrid should be the desired range to map the function along.
    With 4 inputs, the first is the map function, second is the program, third is the 
    start of the range (inclusive), fourth is the end of the range function (exclusive)"
-  ([program gamestate]                    ; wall-l-check will return a vector (and all others will too
-  (let [prog-fn (program-to-fn program)]
-    (prog-fn (wall-l-check gamestate)
-             (wall-r-check gamestate)
-             (wall-u-check gamestate)
-             (wall-d-check gamestate)
-             (finish-l-check gamestate)
-             (finish-r-check gamestate)
-             (finish-u-check gamestate)
-             (finish-d-check gamestate))))
-  )
+  ([program gamestate]   ; wall-l-check will return a vector (and all others will too
+    (let [prog-fn (program-to-fn program)]
+      (prog-fn (wall-l-check gamestate)
+               (wall-r-check gamestate)
+               (wall-u-check gamestate)
+               (wall-d-check gamestate)
+               (finish-l-check gamestate)
+               (finish-r-check gamestate)
+               (finish-u-check gamestate)
+               (finish-d-check gamestate)))))
 
-(defn andd
-  "Our own and function that takes 3 arguments and returns the first vector that has false as its first item
-   or the last vector that has true as the first item"
-  [arg1 arg2 arg3]
-  (let [bool1 (first arg1)
-        bool2 (first arg2)
-        bool3 (first arg3 )]
-    (cond
-      (= bool1 false) arg1
-      (= bool2 false) arg2
-      (= bool3 false) arg3
-      :else arg3)))
 
-      
 (defn perform-program
   "Returns the move (second object in the vector) returned by evaluate"
   [program]
   (second (evaluate program)))
+
+
+
+
 
 
 (defn evaluate-population
@@ -163,17 +598,62 @@
   
   )
 
-  
+
 ;;;;;;;;;;;;;;;;;;;;; terminal sets and functions sets
 
 
 (def terminal-set
   '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
-                       finish-d))
+           finish-d))
 (defn rand-term
   "returns a ranom value in the terminal set"
   []
   (rand-nth terminal-set))
+
+
+
+
+(defn andd
+  "Our own and function that takes 3 arguments and returns the first vector that has false as its first item
+   or the last vector that has true as the first item"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)
+        bool2 (first arg2)
+        bool3 (first arg3 )]
+    (cond
+      (= bool1 false) arg1
+      (= bool2 false) arg2
+      (= bool3 false) arg3
+      :else arg3)))
+
+
+(defn orr
+  "Our own or function that takes 3 arguments and returns the first vector that has true as its first item
+   or the last vector that has false as its first item"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)
+        bool2 (first arg2)
+        bool3 (first arg3 )]
+    (cond
+      (= bool1 true) arg1
+      (= bool2 true) arg2
+      (= bool3 true) arg3
+      :else arg3)))
+
+
+(defn iff
+  "Our own if function that takes 3 argument.  Each of the arguments is a vector.
+   Within the vector are a boolean and a keyword.  The iff will check if the first 
+   arguments boolean is a true or false.  If it is true, it will return the second 
+   argument.  If it is false, it will return the second argument"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)]
+    (if bool1
+      arg2
+      arg3)))
+
+
+
 
 
 (def function-set
@@ -212,22 +692,22 @@
   )
 
 
-  
+
 (defn grow                                                                   ; yay! grow works
   "Builds a function using Grow method, by returning one value at a time"
   [max-d]
   (let [d max-d
         odds (rand)]
-  (cond
-    (= d 0) (rand-term)
-    (= d 1) (if (< odds 0.5)
-              (list (rand-fn) (rand-term) (rand-term) (rand-term))
+    (cond
+      (= d 0) (rand-term)
+      (= d 1) (if (< odds 0.5)
+                (list (rand-fn) (rand-term) (rand-term) (rand-term))
+                (rand-term))
+      :else (if (< odds 0.5)
+              (list (rand-fn) (grow (dec d)) (grow (dec d)) (grow (dec d)))
               (rand-term))
-    :else (if (< odds 0.5)
-            (list (rand-fn) (grow (dec d)) (grow (dec d)) (grow (dec d)))
-            (rand-term))
+      )
     )
-   )
   )
 
 
@@ -271,13 +751,13 @@
 
 
 (defn threshold-selection                       ;could use this functionn to reduce the population to 
-                                                ;semi-decent programs and then do tourni and such
+  ;semi-decent programs and then do tourni and such
   "Returns a list of the individual programs in the population that have a fitness below or equal to the given
    fitness value"
   [value prog-pop]
   (filter (fn [x] (<= (program-fitness x) value)) prog-pop))   ;we found that this function greatly reduces diversity in population, 
-                                                               ;so we didnt include it in our genetic-programming fn but wanted it to
-                                                               ;be in here in-case we needed it for the next project
+;so we didnt include it in our genetic-programming fn but wanted it to
+;be in here in-case we needed it for the next project
 (defn tournament-selection 
   "Randomly selects 7 programs from the population input and outputs the best one with the best fitness"
   [prog-pop]
@@ -294,11 +774,11 @@
   [prog-pop n]
   (take n (sort-by program-fitness prog-pop)))
 
-             
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
-  
+
+
 ;mutations helpers
 
 
@@ -336,7 +816,7 @@
   "Given a program and a replacement-subtree, replace a random node       
    in the program with the replacement-subtree."
   ([prog replacement-subtree]
-      (replace-random-subtree prog replacement-subtree (rand-int (program-size prog))))        ;prof helmuths code
+    (replace-random-subtree prog replacement-subtree (rand-int (program-size prog))))        ;prof helmuths code
   ([prog replacement-subtree subtree-index]
     (cond
       (not (seq? prog)) replacement-subtree
@@ -417,7 +897,7 @@
          n (rand-int 100)
          next-gen '()
          count 50]                               ;produces 50 children every time
-            
+    
     (if (= 0 count)
       next-gen
       (cond
@@ -450,7 +930,7 @@
       )
     )
   )
-    
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -487,6 +967,6 @@
   )
 
 
-        
-      
-  
+
+
+
