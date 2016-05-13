@@ -1,6 +1,4 @@
 (ns robert-jones.simulator)
-
-
 (def maze1
   '(
      [| | | | | | | | | |]
@@ -55,32 +53,75 @@
                    (conj new-destination (nth destination index)) 
                    (inc index)))))
 
-(defn move-player
-  [maze move]
-  (cond
-    (= move :U) (loop [new-maze []
-                       row 0]
-                  (if (= row (count maze))
-                    new-maze
-                    (if (= row (second (get-player maze)))
-                      (loop [this-row []
-                             column 0]
-                        (if (= column (count (nth maze this-row)))
-                          (conj new-maze this-row)
-                          (recur (conj (nth (nth new-maze this-row) column)) 
-                                       (inc column))))
-                      (recur (conj new-maze (nth maze row)) (inc row)))))))
+(defn switch-columns
+  "moves character to left or right"
+  [row character destination]
+  (loop [new-row []
+         index 0]
+    (cond
+      (= index (count row)) new-row
+      (= index (min character destination)) (if (= (min character destination) character)
+                                              (recur (conj new-row '_ '*) (+ index 2))
+                                              (recur (conj new-row '* '_) (+ index 2)))
+      :else (recur (conj new-row (nth row index)) (inc index)))))
+
 
 (defn move-player
   [maze move]
-  (loop [new-maze []
-         row 0]
-    (if (= row (count maze))
-      new-maze
-      (if (= row (+ (second (get-player maze)) 1))
-        (switch-rows (nth maze (second (get-player maze))) (nth maze
+  (let [player-row (second (get-player maze))
+        player-column (first (get-player maze))]
+    (cond
+      (= move :U)
+      (if (not (first (check-for-wall maze :U)))
+        (move-player maze :R)
+        (loop [new-maze []
+               row 0]
+          (cond
+            (= row (count maze))
+            new-maze
+            (= row (- player-row 1))
+            (let [new-rows (switch-rows (nth maze player-row) (nth maze (- player-row 1)) player-column)]
+              (recur (into [] (concat new-maze (reverse new-rows))) (+ row 2)))
+            :else (recur (conj new-maze (nth maze row)) (inc row))))
+        )
+      (= move :D)
+      (if (not (first (check-for-wall maze :D)))
+        (move-player maze :L)
+        (loop [new-maze []
+               row 0]
+          (cond
+            (= row (count maze))
+            new-maze
+            (= row player-row)
+            (let [new-rows (switch-rows (nth maze player-row) (nth maze (+ player-row 1)) player-column)]
+              (recur (into [] (concat new-maze new-rows)) (+ row 2)))
+            :else (recur (conj new-maze (nth maze row)) (inc row))))
+        )
+      (= move :L)
+      (if (not (first (check-for-wall maze :L)))
+        (move-player maze :U)
+        (loop [new-maze []
+               row 0]
+          (cond
+            (= row (count maze)) new-maze
+            (= row player-row) (let [new-row (switch-columns (nth maze player-row) player-column (- player-column 1))]
+                                 (recur (conj new-maze new-row) (inc row)))
+            :else (recur (conj new-maze (nth maze row)) (inc row))))
+        )
+      (= move :R)
+      (if (not (first (check-for-wall maze :R)))
+        (move-player maze :D)
+        (loop [new-maze []
+               row 0]
+          (cond
+            (= row (count maze)) new-maze
+            (= row player-row) (let [new-row (switch-columns (nth maze player-row) player-column (+ player-column 1))]
+                                 (recur (conj new-maze new-row) (inc row)))
+            :else (recur (conj new-maze (nth maze row)) (inc row))))
+        ))))
+
                     
-  
+
 
 ;tester
 (get-maze-symbol maze1 1 1)
