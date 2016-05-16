@@ -19,9 +19,9 @@
 
 
 
-(def terminal-set
+(def terminal-set                                                     ;think about adding not of everying into terminal set
   '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
-           finish-d))
+           finish-d last-move))
 (defn rand-term
   "returns a ranom value in the terminal set"
   []
@@ -50,9 +50,6 @@
   (rand-nth (vector arg1 arg2 arg3)))
 ;tester
 (randd 'wall-l 'wall-r 'wall-d)
-
-
-
 
 
 
@@ -86,7 +83,7 @@
 
 
 (def function-set
-  '(iff andd orr randd))
+  '(iff andd orr))
 (defn rand-fn
   "returns a ranom value in the function set"
   []
@@ -166,6 +163,14 @@
      ['| '| '| '_ '| '| '_ '| '| '|]
      ['| '| '| '_ '| '| '* '| '| '|]
      ['| '| '| '_ '_ '_ '_ '| '| '|]
+     ['| '| '| '| '| '| '| '| '| '|]  ])
+
+(def maze8
+  [  ['| '| '| '| '| '| '| '| '| '|]
+     ['| '| '| '| '| '| 'F '| '| '|]
+     ['| '| '| '| '| '| '_ '| '| '|]
+     ['| '| '| '| '| '| '_ '| '| '|]
+     ['| '* '_ '_ '_ '_ '_ '| '| '|]
      ['| '| '| '| '| '| '| '| '| '|]  ])
 
 
@@ -297,19 +302,12 @@ maze1
 
 
 
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;                MOVE PLAYER START
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 
 
 
@@ -399,6 +397,7 @@ maze1
         ))))
 
 
+
   
     
 
@@ -408,8 +407,7 @@ maze1
 ;                            MOVE PLAYER END
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;;;;;;;;;;;;; evaluating programs
@@ -428,7 +426,8 @@ maze1
                 finish-l
                 finish-r
                 finish-u
-                finish-d]
+                finish-d
+                last-move]
               program)))
 
 
@@ -438,7 +437,7 @@ maze1
    the thrid should be the desired range to map the function along.
    With 4 inputs, the first is the map function, second is the program, third is the 
    start of the range (inclusive), fourth is the end of the range function (exclusive)"
-  ([program gamestate]   ; wall-l-check will return a vector (and all others will too
+  ([program gamestate last-move]   ; wall-l-check will return a vector (and all others will too
     (let [prog-fn (program-to-fn program)]
       (prog-fn (check-for-wall gamestate :L)
                (check-for-wall gamestate :R)
@@ -447,18 +446,24 @@ maze1
                (check-for-finish gamestate :L)
                (check-for-finish gamestate :R)
                (check-for-finish gamestate :U)
-               (check-for-finish gamestate :D)))
+               (check-for-finish gamestate :D)
+               [true last-move])
+      )
     )
   )
+;tester
+(evaluate 'last-move maze1 :L)
 
 
 (defn perform-program
   "Returns the move (second object in the vector) returned by evaluate"
-  [program gamestate]
-  (second (evaluate program gamestate)))
+  [program gamestate last-move]
+  (second (evaluate program gamestate last-move)))
 ;tester
 maze1
-(perform-program '(andd wall-r wall-d wall-d) (move-player maze1 :R))
+(perform-program '(andd wall-r wall-d wall-d) (move-player maze1 :R) :R)
+(perform-program 'wall-l (move-player maze1 :R) :R)
+
 
 
 
@@ -479,38 +484,76 @@ maze1
     )
   )
 ;tester
-(print-maze maze1)
+(print-maze maze5)
     
-  
+
+
+
+(defn next-legal-move
+  "Generates the next legal move by checking for walls in the maze."
+  [maze move]
+  (let [player-column (second (get-player maze))
+        player-row (first (get-player maze))]
+    (cond
+      (= move :U)
+      (if  (first (check-for-wall maze :U))
+        (next-legal-move maze :R)
+        :U)
+      (= move :R)
+      (if  (first (check-for-wall maze :R))
+        (next-legal-move maze :D)
+        :R)
+      (= move :D)
+      (if  (first (check-for-wall maze :D))
+        (next-legal-move maze :L)
+        :D)
+      (= move :L)
+      (if  (first (check-for-wall maze :L))
+        (next-legal-move maze :U)
+        :L))
+    )
+  )
+;tester
+(move-player (move-player maze5 :R) :R)
+(next-legal-move (move-player (move-player maze5 :R) :R) :U)
+(next-legal-move (move-player maze1 :R) :L)
+(check-for-wall maze1 :R)
+
+
 
 (defn state-steps
   "Prints the state of a maze after each move that a program produces"
   [maze program]
   (let [finish (get-finish maze)]
     (loop [gamestate maze
-           moves 0]
+           moves 0
+           last-move :R]
       (print-maze gamestate)
       (let [player (get-player gamestate)]
         (cond
           (= finish player) (println (str "###########################################\n" (str "Maze completed in " moves " moves!")))
           (>= moves 50) (str "##################################\n\nMax number of moves reached: " moves)
-          :else (let [move (perform-program program gamestate)]           
+          :else (let [move (next-legal-move gamestate (perform-program program gamestate last-move))]                           
             
-                 (recur 
-                   (move-player gamestate move)
-                   (inc moves)
-                   )
-                 )
+            (recur 
+              (move-player gamestate move)
+              (inc moves)
+              move
+              )
+            )
           )
         )
       )
     )
   )
 ;tester
-(state-steps maze1 'wall-u)
+(state-steps maze1 'wall-l)
+(state-steps maze3 'wall-l)
+(state-steps maze5 'last-move)
 
-          
 
+
+         
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -578,13 +621,14 @@ maze1
     (loop [gamestate maze
            total-moves 0
            moves>20 0
-           shortest-distance (get-distance-to-finish gamestate)]
+           shortest-distance (get-distance-to-finish gamestate)
+           last-move :R]
       
       (let [player (get-player gamestate)]
         (cond
           (= finish player) moves>20
           (>= total-moves 30) (+ (* (min shortest-distance (get-distance-to-finish gamestate)) 10) moves>20)             ;min shortest moves and current position
-          :else (let [move (perform-program program gamestate)]                                                          ;30 moves used to calculate fitness but 50 when visualizing the moves          
+          :else (let [move (next-legal-move gamestate (perform-program program gamestate last-move))]                                                          ;30 moves used to calculate fitness but 50 when visualizing the moves          
             
                  (recur 
                    (move-player gamestate move)
@@ -593,6 +637,7 @@ maze1
                      (inc moves>20)                         ;only increments the moves>20 (essentially fitness) if we have already made 20 moves
                      moves>20)
                    (min shortest-distance (get-distance-to-finish gamestate))
+                   move
                    )
                  )
           )
@@ -603,7 +648,7 @@ maze1
 ;tester
 (def rand-prog (grow 2))
 rand-prog
-(state-steps maze3 rand-prog)
+(state-steps maze5 rand-prog)
 (program-fitness rand-prog maze3)
 
 
@@ -665,8 +710,7 @@ besties
 (def instructions
   '{andd 2                               ; ' mark is important because it allows each to be a symbol
     orr 2
-    iff 2
-    randd 2})
+    iff 2})
 
 
 (defn program-size
