@@ -5,11 +5,108 @@
 ;Our maze problem "claroni_jones_maze"
 ;want to solve a simple maze
 
+;maze and gamestate are often interchangable
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+
+
+;;;; Terminal, function, and primitive sets  and decided range for max-depth ;;;
+
+
+;;;;;;;;;;;;;;;;;;;;; terminal sets and functions sets
+
+
+(def terminal-set
+  '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
+           finish-d))
+(defn rand-term
+  "returns a ranom value in the terminal set"
+  []
+  (rand-nth terminal-set))
+
+
+
+(defn andd
+  "Our own and function that takes 3 arguments and returns the first vector that has false as its first item
+   or the last vector that has true as the first item"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)
+        bool2 (first arg2)
+        bool3 (first arg3 )]
+    (cond
+      (= bool1 false) arg1
+      (= bool2 false) arg2
+      (= bool3 false) arg3
+      :else arg3)))
+
+
+(defn orr
+  "Our own or function that takes 3 arguments and returns the first vector that has true as its first item
+   or the last vector that has false as its first item"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)
+        bool2 (first arg2)
+        bool3 (first arg3 )]
+    (cond
+      (= bool1 true) arg1
+      (= bool2 true) arg2
+      (= bool3 true) arg3
+      :else arg3)))
+
+
+(defn iff
+  "Our own if function that takes 3 argument.  Each of the arguments is a vector.
+   Within the vector are a boolean and a keyword.  The iff will check if the first 
+   arguments boolean is a true or false.  If it is true, it will return the second 
+   argument.  If it is false, it will return the second argument"
+  [arg1 arg2 arg3]
+  (let [bool1 (first arg1)]
+    (if bool1
+      arg2
+      arg3)))
+
+
+
+
+
+(def function-set
+  '(iff andd orr))
+(defn rand-fn
+  "returns a ranom value in the function set"
+  []
+  (rand-nth function-set))
+
+
+(def primitive-set
+  (concat terminal-set function-set))
+(defn rand-prim
+  "returns a ranom value in the primitive set"
+  []
+  (rand-nth primitive-set))
+
+
+(defn depth-range 
+  "Returns a number from range 2-3"
+  []
+  (rand-nth (range 2 4))) 
+
+
+
+
+
+
+
 ; maze and helpers
 
+(def default-maze
+  '( [| | | | | | | | | |]
+     [| | | | | | | | | |]
+     [| | | | | | | | | |]
+     [| | | | | | | | | |]
+     [| | | | | | | | | |]
+     [| | | | | | | | | |]))
 
 (def maze1 
   '([| | | | | | | | | |]  
@@ -56,6 +153,8 @@
      [| | | _ | | * | | |]
      [| | | _ _ _ _ | | |]
      [| | | | | | | | | |]))
+
+
 
 
 
@@ -129,6 +228,20 @@
 
 
 
+
+(defn get-distance-to-finish
+  "Calculates the absolute distance of the player to the finish."
+  [maze]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))                                        
+        finish-column (first (get-finish maze))
+        finish-row (second (get-finish maze))]
+    (Math/pow (+ (Math/pow (- finish-column player-column) 2) (Math/pow (- finish-row player-row) 2)) 0.5)))     ;basic distance formula d= sqrt( (x2-x1)^2 + (y2-y1)^2)
+        
+  
+
+
+
 (defn check-for-wall
   "Checks if there is a wall in the direction of the attempted move. 
    Returns true if there is a wall in the move-direction and false if there is not"
@@ -148,17 +261,15 @@
 
 
 
-(defn check-for-finish
-  "Checks if the finish direction is in the move direction. 
+(defn not-check-for-finish
+  "Checks if the finish direction is NOT in the move direction. 
    We decided to reverse what the logical boolean would be so...
    Returns true if the finish IS NOT in the move direction
    Returns false if the finish IS in the move direction
    This is so our 'and' will return the the direction that the finish is in
    since it returns the first false or last true value"
   [maze move]
-  (let [finish-column (first (get-player maze))
-        finish-row (second (get-player maze)) 
-        distance (list-subtraction (get-finish maze) (get-player maze))
+  (let [distance (list-subtraction (get-finish maze) (get-player maze))
         up-dist (first distance)
         r-dist (second distance)
         ]
@@ -169,8 +280,9 @@
       (= move :L) [(not(and (< r-dist 0) (> (abs r-dist) (abs up-dist)))) :L]
       )))
 ;tester
-maze
-(check-for-finish maze1 :R)
+maze1
+(not-check-for-finish maze1 :R)
+
 
 
 
@@ -611,10 +723,12 @@ maze
                (check-for-wall gamestate :R)
                (check-for-wall gamestate :U)
                (check-for-wall gamestate :D)
-               (check-for-finish gamestate :L)
-               (check-for-finish gamestate :R)
-               (check-for-finish gamestate :U)
-               (check-for-finish gamestate :D)))))
+               (not-check-for-finish gamestate :L)
+               (not-check-for-finish gamestate :R)
+               (not-check-for-finish gamestate :U)
+               (not-check-for-finish gamestate :D)))
+    )
+  )
 
 
 (defn perform-program
@@ -624,6 +738,7 @@ maze
 ;tester
 maze1
 (perform-program '(andd wall-r wall-d wall-d) (move-player maze1 :R))
+
 
 
 (defn print-maze
@@ -655,34 +770,26 @@ maze1
            moves 0]
       (print-maze gamestate)
       (let [player (get-player gamestate)]
-        (if(= finish player) 
-          (println (str "###########################################\n" (str "Maze completed in " moves " moves!")))
-          (let [move (perform-program program gamestate)]           
+        (cond
+          (= finish player) (println (str "###########################################\n" (str "Maze completed in " moves " moves!")))
+          (>= moves 50) (str "##################################\n\nMax number of moves reached: " moves)
+          :else (let [move (perform-program program gamestate)]           
             
-            (recur 
-              (move-player gamestate move)
-              (inc moves)
-              )
-            )
+                 (recur 
+                   (move-player gamestate move)
+                   (inc moves)
+                   )
+                 )
           )
         )
       )
     )
   )
 ;tester
-maze1
-(state-steps maze1 '(andd wall-r wall-d wall-d)) 
-  
+(state-steps maze5 'wall-u)
+
           
 
-
-
-
-
-(defn evaluate-population
-  "Takes a population and an x-value and evaluates every individual program."
-  [pop x-value]
-  (map (fn [x] (evaluate x x-value)) pop))
 
 
 
@@ -690,91 +797,9 @@ maze1
 
 
 (def solution '(+ (* x (* x x)) (+ x 3))) 
-(def solution-set (evaluate map solution -5 6))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;; Terminal, function, and primitive sets  and decided range for max-depth ;;;
-
-
-;;;;;;;;;;;;;;;;;;;;; terminal sets and functions sets
-
-
-(def terminal-set
-  '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
-           finish-d))
-(defn rand-term
-  "returns a ranom value in the terminal set"
-  []
-  (rand-nth terminal-set))
-
-
-
-
-(defn andd
-  "Our own and function that takes 3 arguments and returns the first vector that has false as its first item
-   or the last vector that has true as the first item"
-  [arg1 arg2 arg3]
-  (let [bool1 (first arg1)
-        bool2 (first arg2)
-        bool3 (first arg3 )]
-    (cond
-      (= bool1 false) arg1
-      (= bool2 false) arg2
-      (= bool3 false) arg3
-      :else arg3)))
-
-
-(defn orr
-  "Our own or function that takes 3 arguments and returns the first vector that has true as its first item
-   or the last vector that has false as its first item"
-  [arg1 arg2 arg3]
-  (let [bool1 (first arg1)
-        bool2 (first arg2)
-        bool3 (first arg3 )]
-    (cond
-      (= bool1 true) arg1
-      (= bool2 true) arg2
-      (= bool3 true) arg3
-      :else arg3)))
-
-
-(defn iff
-  "Our own if function that takes 3 argument.  Each of the arguments is a vector.
-   Within the vector are a boolean and a keyword.  The iff will check if the first 
-   arguments boolean is a true or false.  If it is true, it will return the second 
-   argument.  If it is false, it will return the second argument"
-  [arg1 arg2 arg3]
-  (let [bool1 (first arg1)]
-    (if bool1
-      arg2
-      arg3)))
-
-
-
-
-
-(def function-set
-  '(iff andd orr))
-(defn rand-fn
-  "returns a ranom value in the function set"
-  []
-  (rand-nth function-set))
-
-
-(def primitive-set
-  (concat terminal-set function-set))
-(defn rand-prim
-  "returns a ranom value in the primitive set"
-  []make-prog
-  (rand-nth primitive-set))
-
-
-(defn depth-range 
-  "Returns a number from range 2-4"
-  []
-  (rand-nth (range 2 5))) ; this might be better because the function is only depth 3, and need a range for ramped half-half
 
 
 ;;;;;;;;;;;;;;;;;;;;;  Initialization methods and helper functions  ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -830,18 +855,52 @@ maze1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; fitness functions
+;might need to edit this to optimize runs
 
-(defn program-fitness                                       ; fitnees is the sum of absolute deviation from the solution at a given x-value
-  "Returns the fitness of a program ."
-  [program]
-  (let [prog-values (evaluate map program -5 6)]                   ;the evaluated program from -5 to 5 (our predetermined range)
-    (apply + (abs-list-subtraction prog-values solution-set))))
+(defn program-fitness                                       ; fitnees is the sum of absolute deviation from the solution at a given x-value.. basically a simulator with just state
+  "Returns the fitness of a program.
+   Fitness is based calculated by the equation:
+   Shortest distance from the maze's finish * 10 + number of moves after 15 moves"
+  [program maze]
+   (let [finish (get-finish maze)]
+    (loop [gamestate maze
+           total-moves 0
+           moves>20 0
+           shortest-distance (get-distance-to-finish gamestate)]
+      
+      (let [player (get-player gamestate)]
+        (cond
+          (= finish player) moves>20
+          (>= total-moves 30) (+ (* (min shortest-distance (get-distance-to-finish gamestate)) 10) moves>20)             ;min shortest moves and current position
+          :else (let [move (perform-program program gamestate)]                                                          ;30 moves used to calculate fitness but 50 when visualizing the moves          
+            
+                 (recur 
+                   (move-player gamestate move)
+                   (inc total-moves)
+                   (if (>= total-moves 20)
+                     (inc moves>20)                         ;only increments the moves>20 (essentially fitness) if we have already made 20 moves
+                     moves>20)
+                   (min shortest-distance (get-distance-to-finish gamestate))
+                   )
+                 )
+          )
+        )
+      )
+    )
+  )
+;tester
+(def rand-prog (grow 2))
+rand-prog
+(state-steps maze3 rand-prog)
+(program-fitness rand-prog maze3)
 
 
 (defn population-fitness                                                  ;mostly helpful for visualization of best functions
   "Returns a list of the fitness of each individual population"
-  [population]
-  (map (fn [x] (program-fitness x)) population))
+  [population maze]
+  (map (fn [x] (program-fitness x maze)) population))
+;tester
+(population-fitness (generate-init-population 50) maze5)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -853,25 +912,35 @@ maze1
   ;semi-decent programs and then do tourni and such
   "Returns a list of the individual programs in the population that have a fitness below or equal to the given
    fitness value"
-  [value prog-pop]
-  (filter (fn [x] (<= (program-fitness x) value)) prog-pop))   ;we found that this function greatly reduces diversity in population, 
+  [value prog-pop maze]
+  (filter (fn [x] (<= (program-fitness x maze) value)) prog-pop))   ;we found that this function greatly reduces diversity in population, 
 ;so we didnt include it in our genetic-programming fn but wanted it to
 ;be in here in-case we needed it for the next project
+;tester
+(threshold-selection 50 (generate-init-population 10) maze5)
+
+
 (defn tournament-selection 
-  "Randomly selects 7 programs from the population input and outputs the best one with the best fitness"
-  [prog-pop]
+  "Randomly selects 3 programs from the population input and outputs the best one with the best fitness"
+  [prog-pop maze]
   (loop [i 0
          lst '()]
-    (if (not (>= i 7))
+    (if (not (>= i 3))
       (recur (inc i)
              (conj lst (rand-nth prog-pop)))
-      (first (sort-by program-fitness lst)))))
+      (first (sort-by (fn [x] (program-fitness x maze)) lst)))))
+;tester
+(tournament-selection (generate-init-population 10) maze1)
 
 
-(defn best-n-progs                          ;this helps us guide our evolution towards better programs
+(defn best-n-progs                          ;this helps us guide our evolution towards better programs and also sorts programs 
   "Returns the best n number of programs from the given program population"
-  [prog-pop n]
-  (take n (sort-by program-fitness prog-pop)))
+  [prog-pop n maze]
+  (take n (sort-by (fn [x] (program-fitness x maze)) prog-pop)))
+;tester
+(def besties (best-n-progs (generate-init-population 20) 10 maze5))
+besties
+(population-fitness besties maze5)
 
 
 
@@ -882,10 +951,9 @@ maze1
 
 
 (def instructions
-  '{+ 2                               ; ' mark is important because it allows each to be a symbol
-    * 2
-    - 2
-    safe-divide 2})
+  '{andd 2                               ; ' mark is important because it allows each to be a symbol
+    orr 2
+    iff 2})
 
 
 (defn program-size
@@ -909,6 +977,8 @@ maze1
                                                            subtree-index)
       :else (recur (rest prog)
                    (- subtree-index (program-size (first prog)))))))
+;tester
+(select-random-subtree (full 3))
 
 
 (defn replace-random-subtree                                                                   ; basically pt mutation
@@ -930,6 +1000,8 @@ maze1
                      element))
                  prog
                  (cons 0 (reductions + (map program-size prog)))))))
+;tester
+(replace-random-subtree (full 2) 'dingly-dongly-doo)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -948,6 +1020,10 @@ maze1
    of max-depth 3"
   [program]
   (replace-random-subtree program (grow 3)))    ;arbitrarily selected max-depth 3
+;tester
+(def proggi (full 2))
+proggi
+(subtree-mutation proggi)
 
 
 (defn hoist-mutation                           ;helps with our bloat problem
@@ -955,21 +1031,24 @@ maze1
    from the program"
   [program]
   (replace-random-subtree program (select-random-subtree program) 0))
+;tester
+proggi
+(hoist-mutation proggi)
 
 
 (defn pt-mutation
   "Selects a random node in a program and replaces it with a new node of the same type"
   [prog]
   (let [node (rand-int (program-size prog))              ;selects random number in prog size
-        sub-tree (select-random-subtree prog node)       ;selects the subtree at that number
-        terminal1 (if (= (rand-term) '(erc -10 10))      ; makes it so we can eval erc
-                    (erc -10 10)
-                    'x)]
+        sub-tree (select-random-subtree prog node)]       ;selects the subtree at that number
     (if (seq? sub-tree)
       (replace-random-subtree prog (conj (rest sub-tree) (rand-fn)) node) ;replace with a random fn if a fn
-      (replace-random-subtree prog terminal1 node) ;replace with terminal if terminal
+      (replace-random-subtree prog (rand-term) node) ;replace with rand terminal if terminal
       )
     ))
+;tester
+proggi
+(pt-mutation proggi)
 
 
 (defn cross-over
@@ -978,8 +1057,9 @@ maze1
    random subtree in parent2"
   [parent1 parent2]
   (replace-random-subtree parent1 (select-random-subtree parent2)))
-
-
+;tester
+(cross-over proggi proggi)
+  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;mutate an entire generation
@@ -989,64 +1069,76 @@ maze1
    Parameters: pt-mutation: 10%
                subtree-mutation: 10%
                cross-over: 55%
-               hoist-mutation: 23%
+               hoist-mutation: 20%
+               random-program: 3%
                replication: 2%"
-  [population]
-  (loop [pop (best-n-progs population 30) ;takes the best 30 of the population to move evolution towards better programs
-         n (rand-int 100)
-         next-gen '()
-         count 50]                               ;produces 50 children every time
-    
-    (if (= 0 count)
-      next-gen
-      (cond
-        (< n 10) (recur  ;10% point mutation on a random program selected via tournament selection
-                         pop
-                         (rand-int 100)
-                         (conj next-gen (pt-mutation (tournament-selection pop)))
-                         (dec count))
-        (< n 20) (recur ;10% sub-tree mutation on a random program selected via tournament selection
-                        pop
-                        (rand-int 100)
-                        (conj next-gen (subtree-mutation (tournament-selection pop)))
-                        (dec count))
-        (< n 75) (recur ;55% cross over on two random programs selected via tournament selection
-                        pop
-                        (rand-int 100)
-                        (conj next-gen (cross-over (tournament-selection pop) (tournament-selection pop)))
-                        (dec count))
-        (< n 98) (recur ;23% hoist mutation on a random program selected via tourny selection 
-                        pop
-                        (rand-int 100)
-                        (conj next-gen (hoist-mutation (tournament-selection pop)))
-                        (dec count))
-        (< n 100) (recur ;5% replication
-                         pop
-                         (rand-int 100)
-                         (conj next-gen (replication (tournament-selection pop)))
-                         (dec count))
+  [population maze]
+  
+  (let [pop population]
+    (loop [n (rand-int 100)
+           next-gen '()
+           count 30]                               ;produces 30 children every time
+      
+      (if (= 0 count)
+        next-gen
+        (cond
+          (< n 10) (recur  ;10% point mutation on a random program selected via tournament selection
+                           
+                           (rand-int 100)
+                           (conj next-gen (pt-mutation (tournament-selection pop maze)))
+                           (dec count))
+          (< n 20) (recur ;10% sub-tree mutation on a random program selected via tournament selection
+                          
+                          (rand-int 100)
+                          (conj next-gen (subtree-mutation (tournament-selection pop maze)))
+                          (dec count))
+          (< n 75) (recur ;55% cross over on two random programs selected via tournament selection
+                          
+                          (rand-int 100)
+                          (conj next-gen (cross-over (tournament-selection pop maze) (tournament-selection pop maze)))
+                          (dec count))
+          (< n 95) (recur ;20% hoist mutation on a random program selected via tourny selection 
+                          
+                          (rand-int 100)
+                          (conj next-gen (hoist-mutation (tournament-selection pop maze)))
+                          (dec count))
+          (< n 98) (recur ;3% ramped-h-h 
+                          
+                          (rand-int 100)
+                          (conj next-gen (ramped-h-h))
+                          (dec count))
+          (< n 100) (recur ;2% replication
+                           
+                           (rand-int 100)
+                           (conj next-gen (replication (tournament-selection pop maze)))
+                           (dec count))
+          )
         )
       )
     )
   )
-
+;tester
+(def rand-gen (generate-init-population 3))
+rand-gen
+(mutate-generation rand-gen maze5)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 ;main
 
 (defn genetic-programming
-  "This function takes no inputs.
-   It generates an initial population size of 1000, and produces
-   new generations via different methods of mutation of population size 50.
+  "This function only which maze you want to test the genetic programming on.
+   It generates an initial population size of 30, and produces
+   new generations via different methods of mutation of population size 30.
    Each generation prints the generation number, the best program
    in that generation and the total error of that program.
    Will terminate at 50 generations or when a solution is found."
-  []
-  (loop [pop (generate-init-population 1000)          ;makes the first two runs have a longer runtime but gives better overall results
+  [maze]
+  (loop [pop (generate-init-population 30)          
          gen-number 1]
-    (let [best-prog (first(best-n-progs pop 1))
-          best-err (float(program-fitness best-prog))]    
+    (let [best-20 (best-n-progs pop 20 maze)    ;takes the best 20 programs in order of fitness to move evolution towards better programs
+          best-prog (first best-20)             ; since best20 is sorted we can take first for best
+          best-err (float(program-fitness best-prog maze))]    
       (println "Generation number: " gen-number)
       (println "Best program this generation:" best-prog)
       (println "Total error of that program:"  best-err)
@@ -1058,7 +1150,7 @@ maze1
                                    "\nIt's error:" best-err 
                                    "\n\n############################################################\n")
         :else (recur
-                (mutate-generation pop)
+                (mutate-generation best-20 maze)
                 (inc gen-number))
         )
       )
