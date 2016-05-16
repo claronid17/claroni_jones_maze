@@ -353,7 +353,7 @@ maze1
       (if  (first (check-for-wall maze :U))
         (move-player maze :R)
         (loop [new-maze []
-               row  fitnees is the sum of absolute deviation from the solution at a given x-value.. basically a simulator with just state0]
+               row 0]
           (cond
             (= row (count maze))
             new-maze
