@@ -1,10 +1,6 @@
 (ns robert-jones.simulator)
 
-(def maze1
-  [
-     [| | | | | | | | | |]
-     [| * _ _ _ _ _ _ F |]
-     [| | | | | | | | | |]])
+
 
 (def maze1
   [
@@ -18,11 +14,6 @@
      ['| '_ '* '_ '_ '_ '_ '_ 'F '|]
      ['| '| '| '| '| '| '| '| '| '|]])
 
-(def maze2
-  '(
-     [| | | | | | | | | |]
-     [| _ * _ _ _ _ _ F |]
-     [| | | | | | | | | |]))
 
 (defn get-maze-symbol
   [maze pos-vec]
@@ -43,8 +34,8 @@
   "Checks if there is a wall in the direction of the attempted move. 
    Returns true if there is a wall in the move-direction and false if there is not"
   [maze move]
-  (let [player-row (first (get-player maze))
-        player-column (second (get-player maze))]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))]
     (cond
       (= move :U) [(= '| (get-maze-symbol maze [(- player-column 1) player-row])) :U]
       (= move :D) [(= '| (get-maze-symbol maze [(+ player-column 1) player-row])) :D]
@@ -136,5 +127,12 @@
 
 
 ;tester
+
+(move-player (move-player maze1 :U) :L)
+
+(move-player maze2 :U)
+
+(check-for-wall maze2 :R)
+
 (get-maze-symbol maze1 1 1)
 (get-player maze1)
