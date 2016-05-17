@@ -203,6 +203,27 @@
       [| | _ _ _ F | | | |]
       [| | | | | | | | | |]])
 
+(def maze12
+  '[  [| | | | | | | | | | | | | |]
+      [| _ _ * _ _ _ _ _ _ _ _ _ |]
+      [| _ | _ | | | | | | | _ | |]
+      [| _ | _ | | | | _ _ _ _ | |]
+      [| _ _ _ _ _ _ _ | _ | | | |]
+      [| _ | | | _ | _ _ _ _ _ | |]
+      [| _ _ | | _ F _ | | | _ | |]
+      [| | | | | | | | | | | | | |] ])
+
+(def maze13
+  '[  [| | | | | | | | | | | | | |]
+      [| _ _ * _ _ _ _ _ _ _ _ _ |]
+      [| _ | _ | | | | | | | _ | |]
+      [| _ | _ | | | | _ _ _ _ | |]
+      [| _ _ _ _ _ _ _ | _ | | | |]
+      [| _ | | | _ | _ _ _ _ _ | |]
+      [| _ _ | F _ _ _ | | | _ | |]
+      [| | | | | | | | | | | | | |] ])
+
+
 
 
 
@@ -754,22 +775,22 @@ maze1
    (let [finish (get-finish maze)]
     (loop [gamestate maze
            total-moves 0
-           moves>20 0
+           moves>15 0
            shortest-distance (get-distance-to-finish gamestate)
            last-move :R]
       
       (let [player (get-player gamestate)]
         (cond
-          (= finish player) moves>20
-          (>= total-moves 30) (+ (* (min shortest-distance (get-distance-to-finish gamestate)) 10) moves>20)             ;min shortest moves and current position
+          (= finish player) moves>15
+          (>= total-moves 30) (+ (* (min shortest-distance (get-distance-to-finish gamestate)) 10) moves>15)             ;min shortest moves and current position
           :else (let [move (next-legal-move gamestate (perform-program program gamestate last-move))]                                                          ;30 moves used to calculate fitness but 50 when visualizing the moves          
             
                  (recur 
                    (move-player gamestate move)
                    (inc total-moves)
-                   (if (>= total-moves 20)
-                     (inc moves>20)                         ;only increments the moves>20 (essentially fitness) if we have already made 20 moves
-                     moves>20)
+                   (if (>= total-moves 15)
+                     (inc moves>15)                         ;only increments the moves>20 (essentially fitness) if we have already made 20 moves
+                     moves>15)
                    (min shortest-distance (get-distance-to-finish gamestate))
                    move
                    )
@@ -1037,7 +1058,7 @@ rand-gen
       (println "\nBest 20 Programs Total Fitness:"  pop-fitness)
       (println "\n############################################################\n")
       (cond 
-        (<= best-err 10) (println "*****Solution Found!*****\n Solution is:" best-prog "\n")
+        (<= best-err 15) (println "*****Solution Found!*****\n Solution is:" best-prog "\n")
         (= gen-number 50) (println "Max generations reached (" gen-number
                                    ").\nBest program:" best-prog
                                    "\nIt's error:" best-err 
