@@ -20,8 +20,11 @@
 
 
 (def terminal-set                                                     ;think about adding not of everying into terminal set
-  '(wall-l wall-r wall-u wall-d finish-l finish-r finish-u
-           finish-d last-move))
+  '(wall-l wall-r wall-u wall-d  
+           not-wall-l not-wall-r not-wall-u not-wall-d
+           finish-l finish-r finish-u finish-d
+           breadcrumb-r breadcrumb-d breadcrumb-l breadcrumb-u
+           last-move))
 (defn rand-term
   "returns a ranom value in the terminal set"
   []
@@ -173,6 +176,25 @@
      ['| '* '_ '_ '_ '_ '_ '| '| '|]
      ['| '| '| '| '| '| '| '| '| '|]  ])
 
+(def maze9
+  [  ['| '| '| '| '| '| '| '| '| '|]
+     ['| '| '* '| '| '| 'F '| '| '|]
+     ['| '| '_ '| '| '| '_ '| '| '|]
+     ['| '| '_ '| '| '| '_ '| '| '|]
+     ['| '| '_ '_ '_ '_ '_ '| '| '|]
+     ['| '| '| '| '| '| '| '| '| '|]  ])
+
+(def maze10
+  [  ['| '| '| '| '| '| '| '| '| '|]
+     ['| '* '_ '_ '| '| '_ '_ '_ '|]
+     ['| '| '| '_ '| '| '_ '| '_ '|]
+     ['| '| '| '_ '| '| '_ '| '_ '|]
+     ['| '| '| '_ '_ '_ '_ '| '_ '|]
+     ['| '| '| '| '| '| '| '| '_ '|]
+     ['| '| '| '| '| 'F '_ '_ '_ '|]
+     ['| '| '| '| '| '| '| '| '| '|]])
+
+
 
 
 
@@ -280,6 +302,55 @@
 
 
 
+(defn not-check-for-wall
+  "Checks if there is a wall in the direction of the attempted move. 
+   Returns true if there is a wall in the move-direction and false if there is not"
+  [maze move]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))]
+    (cond
+      (= move :U) [(not (= '| (get-maze-symbol maze [(- player-column 1) player-row]))) :U]
+      (= move :D) [(not (= '| (get-maze-symbol maze [(+ player-column 1) player-row]))) :D]
+      (= move :L) [(not (= '| (get-maze-symbol maze [player-column (- player-row 1)]))) :L]
+      (= move :R) [(not (= '| (get-maze-symbol maze [player-column (+ player-row 1)]))) :R]
+      )))
+;tester
+(not-check-for-wall maze1 :R)
+
+
+
+
+
+(defn check-for-breadcrumb
+  "Checks if there is a breadcrumb ('=) in the direction of the attempted move. 
+   Returns true and the opposite direction if there is a breadcrumb in the move-direction and false and the move direction if there is not"
+  [maze move]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))]
+    (cond
+      (= move :U) (let [bool (= '= (get-maze-symbol maze [(- player-column 1) player-row]))]
+                    [bool (if (= bool true)
+                            :D
+                            :U)])
+      
+      (= move :D) (let [bool (= '= (get-maze-symbol maze [(+ player-column 1) player-row]))]
+                        [bool (if (= bool true)
+                            :U
+                            :D)])
+      (= move :L) (let [bool (= '= (get-maze-symbol maze [player-column (- player-row 1)]))]
+                        [bool (if (= bool true)
+                            :R
+                            :L)])
+      (= move :R) (let [bool (= '= (get-maze-symbol maze [player-column (+ player-row 1)]))]
+                    [bool (if (= bool true)
+                            :L
+                            :R)])
+      )))
+;tester
+
+
+
+
 (defn check-for-finish                                                                
   "Checks if the finish direction is in the move direction. 
    Returns true if the finish IS  in the move direction
@@ -312,14 +383,14 @@ maze1
 
 
 (defn switch-rows
-  "moves character between rows."
+  "moves character between rows and leaves breadcrumbs."
   [source destination col]
   (loop [new-source []
          new-destination []
          index 0]
     (cond 
       (= index (count source)) [new-source new-destination]
-      (= index col) (recur (conj new-source '_) (conj new-destination '*) (inc index))
+      (= index col) (recur (conj new-source '=) (conj new-destination '*) (inc index))
       :else (recur (conj new-source (nth source index)) 
                    (conj new-destination (nth destination index)) 
                    (inc index)))))
@@ -327,15 +398,15 @@ maze1
 
 
 (defn switch-columns
-  "moves character to left or right"
+  "moves character to left or right and leaves breadcrumbs"
   [row character destination]
   (loop [new-row []
          index 0]
     (cond
       (= index (count row)) new-row
       (= index (min character destination)) (if (= (min character destination) character)
-                                              (recur (conj new-row '_ '*) (+ index 2))
-                                              (recur (conj new-row '* '_) (+ index 2)))
+                                              (recur (conj new-row '= '*) (+ index 2))
+                                              (recur (conj new-row '* '=) (+ index 2)))
       :else (recur (conj new-row (nth row index)) (inc index)))))
 
 
@@ -395,7 +466,9 @@ maze1
                                  (recur (conj new-maze new-row) (inc row)))
             :else (recur (conj new-maze (nth maze row)) (inc row))))
         ))))
-
+;tester
+(move-player (move-player maze1 :R) :R)
+(move-player maze7 :D)
 
 
   
@@ -423,10 +496,18 @@ maze1
                 wall-r
                 wall-u
                 wall-d
+                not-wall-l
+                not-wall-r
+                not-wall-u
+                not-wall-d
                 finish-l
                 finish-r
                 finish-u
                 finish-d
+                breadcrumb-r
+                breadcrumb-d
+                breadcrumb-l
+                breadcrumb-u
                 last-move]
               program)))
 
@@ -443,10 +524,18 @@ maze1
                (check-for-wall gamestate :R)
                (check-for-wall gamestate :U)
                (check-for-wall gamestate :D)
+               (not-check-for-wall gamestate :L)
+               (not-check-for-wall gamestate :R)
+               (not-check-for-wall gamestate :U)
+               (not-check-for-wall gamestate :D)
                (check-for-finish gamestate :L)
                (check-for-finish gamestate :R)
                (check-for-finish gamestate :U)
                (check-for-finish gamestate :D)
+               (check-for-breadcrumb gamestate :R)
+               (check-for-breadcrumb gamestate :D)
+               (check-for-breadcrumb gamestate :L)
+               (check-for-breadcrumb gamestate :U)
                [true last-move])
       )
     )
@@ -894,14 +983,16 @@ rand-gen
   (loop [pop (generate-init-population 30)          
          gen-number 1]
     (let [best-20 (best-n-progs pop 20 maze)    ;takes the best 20 programs in order of fitness to move evolution towards better programs
+          pop-fitness (apply + (population-fitness best-20 maze))
           best-prog (first best-20)             ; since best20 is sorted we can take first for best
           best-err (float(program-fitness best-prog maze))]    
       (println "Generation number: " gen-number)
       (println "Best program this generation:" best-prog)
       (println "Total error of that program:"  best-err)
+      (println "\nBest 20 Programs Total Fitness:"  pop-fitness)
       (println "\n############################################################\n")
       (cond 
-        (= best-err 0.0) (println "*****Solution Found!*****\n Solution is:" best-prog "\n")
+        (<= best-err 10) (println "*****Solution Found!*****\n Solution is:" best-prog "\n")
         (= gen-number 50) (println "Max generations reached (" gen-number
                                    ").\nBest program:" best-prog
                                    "\nIt's error:" best-err 
