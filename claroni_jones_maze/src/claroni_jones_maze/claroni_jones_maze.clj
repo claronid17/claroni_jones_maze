@@ -115,84 +115,93 @@
 ; maze and helpers
 
 (def default-maze
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]  ])
+  '[  [| | | | | | | | | |]
+      [| | | | | | | | | |]
+      [| | | | | | | | | |]
+      [| | | | | | | | | |]
+      [| | | | | | | | | |]
+      [| | | | | | | | | |]  ])
 
 (def maze1 
-  [  ['| '| '| '| '| '| '| '| '| '|]  
-     ['| '* '_ '_ '_ '_ '_ '_ 'F '|] 
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[  [| | | | | | | | | |]  
+      [| * _ _ _ _ _ _ F |] 
+      [| | | | | | | | | |]])
 (def maze2 
-  [ ['| '| '| '| '| '| '| '| '| '|]  
-     ['| 'F '_ '_ '_ '_ '_ '_ '* '|] 
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[ [| | | | | | | | | |]  
+      [| F _ _ _ _ _ _ * |] 
+      [| | | | | | | | | |]])
 
 (def maze3
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| '* '_ '_ '_ '_ '_ '_ '| '|]
-     ['| '| '| '| '| '| '| '_ '| '|]
-     ['| '| '| '| '| '| '| '_ '| '|]
-     ['| '| '| '| '| '| '| 'F '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[  [| | | | | | | | | |]
+      [| * _ _ _ _ _ _ | |]
+      [| | | | | | | _ | |]
+      [| | | | | | | _ | |]
+      [| | | | | | | F | |]
+      [| | | | | | | | | |]])
 (def maze4
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| 'F '_ '_ '_ '_ '_ '_ '| '|]
-     ['| '| '| '| '| '| '| '_ '| '|]
-     ['| '| '| '| '| '| '| '_ '| '|]
-     ['| '| '| '| '| '| '| '* '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[  [| | | | | | | | | |]
+      [| F _ _ _ _ _ _ | |]
+      [| | | | | | | _ | |]
+      [| | | | | | | _ | |]
+      [| | | | | | | * | |]
+      [| | | | | | | | | |]])
 
 (def maze5
-  [ ['| '| '| '| '| '| '| '| '| '|]
-     ['| '* '_ '_ '| '| '_ '_ 'F '|]
-     ['| '| '| '_ '| '| '_ '| '| '|]
-     ['| '| '| '_ '| '| '_ '| '| '|]
-     ['| '| '| '_ '_ '_ '_ '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[ [| | | | | | | | | |]
+      [| * _ _ | | _ _ F |]
+      [| | | _ | | _ | | |]
+      [| | | _ | | _ | | |]
+      [| | | _ _ _ _ | | |]
+      [| | | | | | | | | |]])
 (def maze6
-  [ ['| '| '| '| '| '| '| '| '| '|]
-    ['| 'F '_ '_ '| '| '_ '_ '* '|]
-    ['| '| '| '_ '| '| '_ '| '| '|]
-    ['| '| '| '_ '| '| '_ '| '| '|]
-    ['| '| '| '_ '_ '_ '_ '| '| '|]
-    ['| '| '| '| '| '| '| '| '| '|] ])
+  '[ [| | | | | | | | | |]
+     [| F _ _ | | _ _ * |]
+     [| | | _ | | _ | | |]
+     [| | | _ | | _ | | |]
+     [| | | _ _ _ _ | | |]
+     [| | | | | | | | | |] ])
 (def maze7
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| 'F '_ '_ '| '| '_ '_ '_ '|]
-     ['| '| '| '_ '| '| '_ '| '| '|]
-     ['| '| '| '_ '| '| '* '| '| '|]
-     ['| '| '| '_ '_ '_ '_ '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]  ])
+  '[  [| | | | | | | | | |]
+      [| F _ _ | | _ _ _ |]
+      [| | | _ | | _ | | |]
+      [| | | _ | | * | | |]
+      [| | | _ _ _ _ | | |]
+      [| | | | | | | | | |]  ])
 
 (def maze8
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '| '| '| '| 'F '| '| '|]
-     ['| '| '| '| '| '| '_ '| '| '|]
-     ['| '| '| '| '| '| '_ '| '| '|]
-     ['| '* '_ '_ '_ '_ '_ '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]  ])
+  '[  [| | | | | | | | | |]
+      [| | | | | | F | | |]
+      [| | | | | | _ | | |]
+      [| | | | | | _ | | |]
+      [| * _ _ _ _ _ | | |]
+      [| | | | | | | | | |]  ])
 
 (def maze9
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| '| '* '| '| '| 'F '| '| '|]
-     ['| '| '_ '| '| '| '_ '| '| '|]
-     ['| '| '_ '| '| '| '_ '| '| '|]
-     ['| '| '_ '_ '_ '_ '_ '| '| '|]
-     ['| '| '| '| '| '| '| '| '| '|]  ])
+  '[  [| | | | | | | | | |]
+      [| | * | | | F | | |]
+      [| | _ | | | _ | | |]
+      [| | _ | | | _ | | |]
+      [| | _ _ _ _ _ | | |]
+      [| | | | | | | | | |]  ])
 
 (def maze10
-  [  ['| '| '| '| '| '| '| '| '| '|]
-     ['| '* '_ '_ '| '| '_ '_ '_ '|]
-     ['| '| '| '_ '| '| '_ '| '_ '|]
-     ['| '| '| '_ '| '| '_ '| '_ '|]
-     ['| '| '| '_ '_ '_ '_ '| '_ '|]
-     ['| '| '| '| '| '| '| '| '_ '|]
-     ['| '| '| '| '| 'F '_ '_ '_ '|]
-     ['| '| '| '| '| '| '| '| '| '|]])
+  '[  [| | | | | | | | | |]
+      [| * _ _ | | _ _ _ |]
+      [| | | _ | | _ | _ |]
+      [| | | _ | | _ | _ |]
+      [| | | _ _ _ _ | _ |]
+      [| | | | | | | | _ |]
+      [| | | | | F _ _ _ |]
+      [| | | | | | | | | |]])
+
+(def maze11
+  '[  [| | | | | | | | | |]
+      [| * _ _ _ _ _ _ _ |]
+      [| _ | _ _ | | _ | |]
+      [| _ _ _ | | | _ _ |]
+      [| | _ | | | | | _ |]
+      [| | _ _ _ F | | | |]
+      [| | | | | | | | | |]])
 
 
 
@@ -267,17 +276,6 @@
 ;tester
 (get-finish maze1)
 
-
-
-
-(defn get-distance-to-finish
-  "Calculates the absolute distance of the player to the finish."
-  [maze]
-  (let [player-column (first (get-player maze))
-        player-row (second (get-player maze))                                        
-        finish-column (first (get-finish maze))
-        finish-row (second (get-finish maze))]
-    (Math/pow (+ (Math/pow (- finish-column player-column) 2) (Math/pow (- finish-row player-row) 2)) 0.5)))     ;basic distance formula d= sqrt( (x2-x1)^2 + (y2-y1)^2)
         
   
 
@@ -299,6 +297,53 @@
 (check-for-wall maze7 :D)
 (get-player maze7)
 (list-subtraction (get-finish maze1) (get-player maze1))
+
+
+
+(defn get-distance-to-finish                                                                
+  "Calculates the absolute distance of the player to the finish."
+  [maze]
+  (let [player-column (first (get-player maze))
+        player-row (second (get-player maze))                                        
+        finish-column (first (get-finish maze))
+        finish-row (second (get-finish maze))
+        minDist (Math/pow (+ (Math/pow (- finish-column player-column) 2) (Math/pow (- finish-row player-row) 2)) 0.5)] ;basic distance formula d= sqrt( (x2-x1)^2 + (y2-y1)^2)
+    (cond
+      (= minDist (float (- finish-row player-row))) 
+      (if (check-for-wall maze :D) 
+        (+ 20 minDist) 
+        minDist)   ;if there is a wall between the player and the finish add 20 to the minDistance returned
+      
+      (= minDist (float (- player-row finish-row))) 
+      (if (check-for-wall maze :U) 
+        (+ 20 minDist) 
+        minDist)
+      
+      (= minDist (float (- finish-column player-column))) 
+      (if (check-for-wall maze :R) 
+        (+ 20 minDist) 
+        minDist)
+      
+      (= minDist (float(- player-column finish-column))) 
+      (if (check-for-wall maze :L) 
+        (+ 20 minDist) 
+        minDist)
+      
+      :else minDist
+      )        
+    ))    
+;tester.
+(def temp 
+'[[| | | | | | | | | |]
+  [| = = = | | _ _ _ |]
+  [| | | = | | _ | _ |]
+  [| | | = | | _ | _ |]
+  [| | | = = * _ | _ |]
+  [| | | | | | | | _ |]
+  [| | | | | F _ _ _ |]
+  [| | | | | | | | | |]])
+temp
+(get-distance-to-finish temp)
 
 
 
@@ -701,7 +746,7 @@ maze1
 ;;; fitness functions
 ;might need to edit this to optimize runs
 
-(defn program-fitness                                       ; fitness is shortest distance from finish *10 + # of moves .. basically a simulator with just state
+(defn program-fitness                                       ; fitness is shortest distance from finish *10 + # of moves >29 .. basically a simulator with just state
   "Returns the fitness of a program.
    Fitness is based calculated by the equation:
    Shortest distance from the maze's finish * 10 + number of moves after 15 moves"
@@ -738,7 +783,7 @@ maze1
 (def rand-prog (grow 2))
 rand-prog
 (state-steps maze5 rand-prog)
-(program-fitness rand-prog maze3)
+(program-fitness rand-prog maze5)
 
 
 (defn population-fitness                                                  ;mostly helpful for visualization of best functions
