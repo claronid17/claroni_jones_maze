@@ -220,15 +220,7 @@
   "Subtracts the values of two lists and returns a list of the absolute value
    of the subtraction"
   [list1 list2]
-  (loop [i (- (count list1) 1)
-         lst '()]
-    (if (< i 0)
-      lst
-      (recur (dec i)
-             (conj lst (abs (- (nth list1 i) (nth list2 i))))
-             )
-      )
-    )
+  (map #(abs (- %1 %2)) list1 list2)
   )
 
 
@@ -236,15 +228,7 @@
   "Subtracts the values of two lists and returns a list of the result
    of the subtraction"
   [list1 list2]
-  (loop [i (- (count list1) 1)
-         lst '()]
-    (if (< i 0)
-      lst
-      (recur (dec i)
-             (conj lst (- (nth list1 i) (nth list2 i)))
-             )
-      )
-    )
+  (map #(- %1 %2) list1 list2)
   )
 
 
@@ -370,17 +354,17 @@
 
 (defn check-for-finish                                                                
   "Checks if the finish direction is in the move direction and returns a boolean-move vector. 
-   Returns true as the first argument of the vector if the finish IS  
+   Returns true as the first argument of the vector if the finish IS the furthest away 
    in the move direction of returns false as the first argument if the
-   finish IS NOT in the move direction. Second vector argument is always the move"
+   finish IS NOT furthest away in the move direction. Second vector argument is always the move"
   [maze move]
   (let [distance (list-subtraction (get-finish maze) (get-player maze))  ;distance to finish
         up-dist (first distance) ;vertical distance to f
         r-dist (second distance) ;horz. distance to f
         ]
     (cond
-      (= move :U) [(and (> up-dist 0) (> up-dist (abs r-dist))) :U]
-      (= move :D) [(and (< up-dist 0) (> (abs up-dist) (abs r-dist))) :D]
+      (= move :U) [(and (> up-dist 0) (> up-dist (abs r-dist))) :U] ;if finish is furthest away in the U directiron return true
+      (= move :D) [(and (< up-dist 0) (> (abs up-dist) (abs r-dist))) :D]    ;this is helpful so that the player will move in the dir it is furthest from the finish
       (= move :R) [(and (> r-dist 0) (> r-dist (abs up-dist))) :R]
       (= move :L) [(and (< r-dist 0) (> (abs r-dist) (abs up-dist))) :L]
       )))
@@ -709,22 +693,34 @@
 
 
 (defn tournament-selection 
-  "Randomly selects 3 programs from the population input and outputs the best one with the best fitness"
+  "Randomly selects 7 programs from the population input and outputs the best one with the best fitness"
   [prog-pop maze]
   (loop [i 0
          lst '()]
-    (if (not (>= i 3))
+    (if (not (>= i 7))
       (recur (inc i)
              (conj lst (rand-nth prog-pop)))
-      (first (sort-by (fn [x] (program-fitness x maze)) lst)))))
+      (first (take 1 (sort-by second lst)))))) ;since we are passing vectors through this, we only want to return bare programs (w/o fitness)
 
 
-(defn best-n-progs                          ;this helps us guide our evolution towards better programs and also sorts programs 
-  "Returns the best n number of programs from the given program population"
-  [prog-pop n maze]
-  (take n (sort-by (fn [x] (program-fitness x maze)) prog-pop)))
-
-
+(defn pop-sorter                          ;this helps us guide our evolution towards better programs and also sorts programs 
+  "Turns a population of programs into a list of vectors.
+   Each vector will have a program and its fitness.
+   The entire list will be sorted by program fitness."
+  [prog-pop maze]
+  (loop [vect []
+         pop prog-pop
+         i 0]
+   (if (= i (count prog-pop))
+     (sort-by second vect)
+     (recur
+       (conj vect [(first pop) (program-fitness (first pop) maze)])
+       (rest pop)
+       (inc i)
+       )
+     )
+   )
+  )
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -805,7 +801,8 @@
   "Selects root-node from the input program and replaces it with a random subtree
    from the program"
   [program]
-  (replace-random-subtree program (select-random-subtree program) 0))
+  (select-random-subtree program))
+
 
 
 (defn pt-mutation
@@ -845,30 +842,29 @@
   (let [pop population]
     (loop [n (rand-int 100)
            next-gen '()
-           count 30]                               ;produces 30 children every time
-      
+           count 100]                               ;produces 100 children every time
       (if (= 0 count)
         next-gen
         (cond
           (< n 10) (recur  ;10% point mutation on a random program selected via tournament selection
                            
                            (rand-int 100)
-                           (conj next-gen (pt-mutation (tournament-selection pop maze)))
+                           (conj next-gen (pt-mutation (first(tournament-selection pop maze))))
                            (dec count))
           (< n 20) (recur ;10% sub-tree mutation on a random program selected via tournament selection
                           
                           (rand-int 100)
-                          (conj next-gen (subtree-mutation (tournament-selection pop maze)))
+                          (conj next-gen (subtree-mutation (first(tournament-selection pop maze))))
                           (dec count))
           (< n 75) (recur ;55% cross over on two random programs selected via tournament selection
                           
                           (rand-int 100)
-                          (conj next-gen (cross-over (tournament-selection pop maze) (tournament-selection pop maze)))
+                          (conj next-gen (cross-over (first(tournament-selection pop maze)) (first(tournament-selection pop maze))))
                           (dec count))
           (< n 95) (recur ;20% hoist mutation on a random program selected via tourny selection 
                           
                           (rand-int 100)
-                          (conj next-gen (hoist-mutation (tournament-selection pop maze)))
+                          (conj next-gen (hoist-mutation (first(tournament-selection pop maze))))
                           (dec count))
           (< n 98) (recur ;3% ramped-h-h 
                           
@@ -878,7 +874,7 @@
           (< n 100) (recur ;2% replication
                            
                            (rand-int 100)
-                           (conj next-gen (replication (tournament-selection pop maze)))
+                           (conj next-gen (replication (first(tournament-selection pop maze))))
                            (dec count))
           )
         )
@@ -893,22 +889,22 @@
 
 (defn genetic-programming
   "This function only takes as an input which maze you want to test the genetic programming on.
-   It generates an initial population size of 30, and produces
-   new generations via different methods of mutation of population size 30.
+   It generates an initial population size of 100, and produces
+   new generations via different methods of mutation of population size 100.
    Each generation prints the generation number, the best program
-   in that generation, the total error of that program, and the best 20 programs' total fitness.
+   in that generation, the total error of that program, and the total population fitness.
    Will terminate at 50 generations or when a solution (fitness <15)is found."
   [maze]
-  (loop [pop (generate-init-population 30)          
+  (loop [pop (generate-init-population 100)          
          gen-number 1]
-    (let [best-20 (best-n-progs pop 20 maze)    ;takes the best 20 programs in order of fitness to move evolution towards better programs
-          pop-fitness (apply + (population-fitness best-20 maze))
-          best-prog (first best-20)             ; since best20 is sorted we can take first for best
-          best-err (float(program-fitness best-prog maze))]    
+    (let [sorted-pop (pop-sorter pop maze)    ;sorts the population by fitness and make a vector
+          pop-fitness (apply + (map second sorted-pop)) ;entire population fitness
+          best-prog (first (first sorted-pop))             ; since it is sorted it will always be the best
+          best-err (second (first sorted-pop))] 
       (println "Generation number: " gen-number)
       (println "Best program this generation:" best-prog)
       (println "Total error of that program:"  best-err)
-      (println "\nBest 20 Programs Total Fitness:"  pop-fitness)
+      (println "\nTotal Population Fitness:"  pop-fitness)
       (println "\n############################################################\n")
       (cond 
         (<= best-err 15) (println "*****Solution Found!*****\n Solution is:" best-prog "\n") ;if the error is less than 15 that means it has solved the maze in atleast 30 moves. which is our criteria for termination
@@ -917,7 +913,7 @@
                                    "\nIt's error:" best-err 
                                    "\n\n############################################################\n")
         :else (recur
-                (mutate-generation best-20 maze)
+                (mutate-generation sorted-pop maze)
                 (inc gen-number))
         )
       )
