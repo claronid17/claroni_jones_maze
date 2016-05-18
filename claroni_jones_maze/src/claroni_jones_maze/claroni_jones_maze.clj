@@ -370,16 +370,16 @@
 
 (defn check-for-finish                                                                
   "Checks if the finish direction is in the move direction and returns a boolean-move vector. 
-   Returns true as the first argument of the vector if the finish IS  
+   Returns true as the first argument of the vector if the finish IS  the furthest away
    in the move direction of returns false as the first argument if the
-   finish IS NOT in the move direction. Second vector argument is always the move"
+   finish IS NOT furthest away in the move direction. Second vector argument is always the move"
   [maze move]
   (let [distance (list-subtraction (get-finish maze) (get-player maze))  ;distance to finish
         up-dist (first distance) ;vertical distance to f
         r-dist (second distance) ;horz. distance to f
         ]
     (cond
-      (= move :U) [(and (> up-dist 0) (> up-dist (abs r-dist))) :U]
+      (= move :U) [(and (> up-dist 0) (> up-dist (abs r-dist))) :U] ;if finish is the furthest away in the U direction
       (= move :D) [(and (< up-dist 0) (> (abs up-dist) (abs r-dist))) :D]
       (= move :R) [(and (> r-dist 0) (> r-dist (abs up-dist))) :R]
       (= move :L) [(and (< r-dist 0) (> (abs r-dist) (abs up-dist))) :L]
