@@ -19,7 +19,7 @@
 
 
 
-(def terminal-set                                                     ;think about adding not of everying into terminal set
+(def terminal-set                                                     
   '(wall-l wall-r wall-u wall-d  
            not-wall-l not-wall-r not-wall-u not-wall-d
            finish-l finish-r finish-u finish-d
@@ -27,7 +27,7 @@
            last-move))
 
 (defn rand-term
-  "returns a ranom value in the terminal set"
+  "returns a random value in the terminal set"
   []
   (rand-nth terminal-set))
 
@@ -46,12 +46,6 @@
       :else arg3)))
 
 
-(defn randd
-  "Our own randd function that takes 3 arguments and returns a random of the 3"
-  [arg1 arg2 arg3]
-  (rand-nth (vector arg1 arg2 arg3)))
-
-
 (defn orr
   "Our own or function that takes 3 arguments and returns the first vector that has true as its first item
    or the last vector that has false as its first item"
@@ -68,9 +62,9 @@
 
 (defn iff
   "Our own if function that takes 3 argument.  Each of the arguments is a vector.
-   Within the vector are a boolean and a keyword.  The iff will check if the first 
+   Within the vector are a boolean and a direction keyword.  The iff will check if the first 
    arguments boolean is a true or false.  If it is true, it will return the second 
-   argument.  If it is false, it will return the second argument"
+   argument.  If it is false, it will return the third argument"
   [arg1 arg2 arg3]
   (let [bool1 (first arg1)]
     (if bool1
@@ -82,7 +76,7 @@
   '(iff andd orr))
 
 (defn rand-fn
-  "returns a ranom value in the function set"
+  "returns a ranodm value in the function set"
   []
   (rand-nth function-set))
 
@@ -354,7 +348,7 @@
   (let [player-column (first (get-player maze))
         player-row (second (get-player maze))]
     (cond
-      (= move :U) (let [bool (= '= (get-maze-symbol maze [(- player-column 1) player-row]))]
+      (= move :U) (let [bool (= '= (get-maze-symbol maze [(- player-column 1) player-row]))] ;checks for the = symbolaa
                     [bool (if (= bool true)
                             :D
                             :U)])
@@ -380,9 +374,9 @@
    in the move direction of returns false as the first argument if the
    finish IS NOT in the move direction. Second vector argument is always the move"
   [maze move]
-  (let [distance (list-subtraction (get-finish maze) (get-player maze))
-        up-dist (first distance)
-        r-dist (second distance)
+  (let [distance (list-subtraction (get-finish maze) (get-player maze))  ;distance to finish
+        up-dist (first distance) ;vertical distance to f
+        r-dist (second distance) ;horz. distance to f
         ]
     (cond
       (= move :U) [(and (> up-dist 0) (> up-dist (abs r-dist))) :U]
@@ -484,7 +478,7 @@
 ;evaluating programs
 
 
-(defn program-to-fn                                                  ;this  will turn the prog above into an actual function using eval
+(defn program-to-fn                                                 
   "Takes a GP program represented as a list                 
    and transforms it into a function that can be called on an input."
   [program]                                                                
@@ -493,7 +487,7 @@
                 wall-r
                 wall-u
                 wall-d
-                not-wall-l
+                not-wall-l           ;all of these inputs correspond to a function call below in evaluate
                 not-wall-r
                 not-wall-u
                 not-wall-d
@@ -740,7 +734,7 @@
 
 
 (def instructions
-  '{andd 2                               ; ' mark is important because it allows each to be a symbol
+  '{andd 2                              
     orr 2
     iff 2})
 
@@ -754,7 +748,7 @@
 
 
 (defn select-random-subtree                                         
-  "Given a program, selects a random subtree and returns it."         ;prof helmuths code 
+  "Given a program, selects a random subtree and returns it."         
   ([prog]
     (select-random-subtree prog (rand-int (program-size prog))))
   ([prog subtree-index]
@@ -769,11 +763,11 @@
 
 
 
-(defn replace-random-subtree                                                                   ; basically pt mutation
+(defn replace-random-subtree                                                                   
   "Given a program and a replacement-subtree, replace a random node       
    in the program with the replacement-subtree."
   ([prog replacement-subtree]
-    (replace-random-subtree prog replacement-subtree (rand-int (program-size prog))))        ;prof helmuths code
+    (replace-random-subtree prog replacement-subtree (rand-int (program-size prog))))        
   ([prog replacement-subtree subtree-index]
     (cond
       (not (seq? prog)) replacement-subtree
@@ -794,7 +788,7 @@
 ; mutation or variation
 
 
-(defn replication                                  ;basically reproduction
+(defn replication                                  ; reproduction
   "Returns clone of the input program."
   [prog]
   prog)
@@ -807,7 +801,7 @@
   (replace-random-subtree program (grow 3)))    ;arbitrarily selected max-depth 3
 
 
-(defn hoist-mutation                           ;helps with our bloat problem
+(defn hoist-mutation                           ;our change from the basic GP system
   "Selects root-node from the input program and replaces it with a random subtree
    from the program"
   [program]
@@ -902,8 +896,8 @@
    It generates an initial population size of 30, and produces
    new generations via different methods of mutation of population size 30.
    Each generation prints the generation number, the best program
-   in that generation and the total error of that program.
-   Will terminate at 50 generations or when a solution is found."
+   in that generation, the total error of that program, and the best 20 programs' total fitness.
+   Will terminate at 50 generations or when a solution (fitness <15)is found."
   [maze]
   (loop [pop (generate-init-population 30)          
          gen-number 1]
@@ -917,7 +911,7 @@
       (println "\nBest 20 Programs Total Fitness:"  pop-fitness)
       (println "\n############################################################\n")
       (cond 
-        (<= best-err 15) (println "*****Solution Found!*****\n Solution is:" best-prog "\n")
+        (<= best-err 15) (println "*****Solution Found!*****\n Solution is:" best-prog "\n") ;if the error is less than 15 that means it has solved the maze in atleast 30 moves. which is our criteria for termination
         (= gen-number 50) (println "Max generations reached (" gen-number
                                    ").\nBest program:" best-prog
                                    "\nIt's error:" best-err 
