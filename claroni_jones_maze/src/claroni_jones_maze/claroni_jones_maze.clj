@@ -12,7 +12,7 @@
 
 
 
-;;;; Terminal, function, and primitive sets  and decided range for max-depth ;;;
+;;;; Terminal, function sets  and decided range for max-depth ;;;
 
 
 ;;;;;;;;;;;;;;;;;;;;; terminal sets and functions sets
@@ -25,11 +25,11 @@
            finish-l finish-r finish-u finish-d
            breadcrumb-r breadcrumb-d breadcrumb-l breadcrumb-u
            last-move))
+
 (defn rand-term
   "returns a ranom value in the terminal set"
   []
   (rand-nth terminal-set))
-
 
 
 (defn andd
@@ -46,14 +46,10 @@
       :else arg3)))
 
 
-
 (defn randd
   "Our own randd function that takes 3 arguments and returns a random of the 3"
   [arg1 arg2 arg3]
   (rand-nth (vector arg1 arg2 arg3)))
-;tester
-(randd 'wall-l 'wall-r 'wall-d)
-
 
 
 (defn orr
@@ -82,23 +78,13 @@
       arg3)))
 
 
-
-
-
 (def function-set
   '(iff andd orr))
+
 (defn rand-fn
   "returns a ranom value in the function set"
   []
   (rand-nth function-set))
-
-
-(def primitive-set
-  (concat terminal-set function-set))
-(defn rand-prim
-  "returns a ranom value in the primitive set"
-  []
-  (rand-nth primitive-set))
 
 
 (defn depth-range 
@@ -106,12 +92,7 @@
   []
   (rand-nth (range 2 4))) 
 
-
-
-
-
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; maze and helpers
 
 (def default-maze
@@ -223,17 +204,22 @@
       [| _ _ | F _ _ _ | | | _ | |]
       [| | | | | | | | | | | | | |] ])
 
-
-
-
-
+(def maze14
+  '[  [| | | | | | | | | | | | | |]
+      [| _ _ * _ _ _ _ _ _ _ _ _ |]
+      [| _ | _ | | | | | | | _ | |]
+      [| _ | _ | | | | _ _ _ _ | |]
+      [| _ _ _ _ _ _ _ | _ | | | |]
+      [| _ | | | _ | _ _ _ _ _ | |]
+      [| _ | F | _ _ _ | | | _ | |]
+      [| | | _ _ _ | | | | | | | |]
+      [| | | | | | | | | | | | | |] ])
 
 
 (defn abs
   "Absolute value of x"
   [x]
   (max x (- 0 x)))
-
 
 
 (defn abs-list-subtraction
@@ -251,8 +237,9 @@
     )
   )
 
+
 (defn list-subtraction
-  "Subtracts the values of two lists and returns a list of the absolute value
+  "Subtracts the values of two lists and returns a list of the result
    of the subtraction"
   [list1 list2]
   (loop [i (- (count list1) 1)
@@ -268,61 +255,49 @@
 
 
 (defn get-maze-symbol
+  "Returns the symbol within the maze at the 
+   row, column pair in the position vector"
   [maze pos-vec]
   (nth (nth maze (first pos-vec)) (second pos-vec)))
-;tester
-(get-maze-symbol maze1 [0 3])
-
 
 
 (defn get-player
-  "Returns coordinates of the player in the maze"
+  "Returns vector coordinates of the player (*) in the maze."
   [maze]
   (loop [layer 0]
     (if (= (some #{'*} (nth maze layer)) '*)
-      [layer (.indexOf (nth maze layer) '*)] ;[column row]
+      [layer (.indexOf (nth maze layer) '*)] 
       (recur (inc layer)))))
-;tester
-(get-player maze2)
-
 
 
 (defn get-finish
-  "Returns coordinates of the finish in the maze"
+  "Returns vector coordinates of the finish (F) in the maze"
   [maze]
   (loop [layer 0]
-    (if (= (some #{'F} (nth maze layer)) 'F)
-      [layer (.indexOf (nth maze layer) 'F)] ;[column row]
+    (if (= (some #{'F} (nth maze layer)) 'F) ;find f and
+      [layer (.indexOf (nth maze layer) 'F)] ;return the coordinate
       (recur (inc layer)))))
-;tester
-(get-finish maze1)
-
-        
-  
-
 
 
 (defn check-for-wall
-  "Checks if there is a wall in the direction of the attempted move. 
-   Returns true if there is a wall in the move-direction and false if there is not"
+  "Checks if there is a wall in the direction of the attempted move and returns a boolean-move vector. 
+   Returns true as the first argument of the vector if there is a wall in the move-direction
+   and false as the first argument of the vector if there is not as well as the move as the secodn
+   argument --> example vector return [true :L]"
   [maze move]
   (let [player-column (first (get-player maze))
         player-row (second (get-player maze))]
     (cond
-      (= move :U) [(= '| (get-maze-symbol maze [(- player-column 1) player-row])) :U]
+      (= move :U) [(= '| (get-maze-symbol maze [(- player-column 1) player-row])) :U] ;if move is up, check up and return true if wall or false if not and :U
       (= move :D) [(= '| (get-maze-symbol maze [(+ player-column 1) player-row])) :D]
       (= move :L) [(= '| (get-maze-symbol maze [player-column (- player-row 1)])) :L]
       (= move :R) [(= '| (get-maze-symbol maze [player-column (+ player-row 1)])) :R]
       )))
-;tester
-(check-for-wall maze7 :D)
-(get-player maze7)
-(list-subtraction (get-finish maze1) (get-player maze1))
-
 
 
 (defn get-distance-to-finish                                                                
-  "Calculates the absolute distance of the player to the finish."
+  "Calculates the absolute distance of the player to the finish.  If the shortest
+   distance has a wall between the player and the finish, the distance gets increased by 20."
   [maze]
   (let [player-column (first (get-player maze))
         player-row (second (get-player maze))                                        
@@ -330,66 +305,51 @@
         finish-row (second (get-finish maze))
         minDist (Math/pow (+ (Math/pow (- finish-column player-column) 2) (Math/pow (- finish-row player-row) 2)) 0.5)] ;basic distance formula d= sqrt( (x2-x1)^2 + (y2-y1)^2)
     (cond
-      (= minDist (float (- finish-row player-row))) 
-      (if (check-for-wall maze :D) 
-        (+ 20 minDist) 
-        minDist)   ;if there is a wall between the player and the finish add 20 to the minDistance returned
+      (= minDist (float (- finish-row player-row))) ;if the min distance is purely down
+      (if (check-for-wall maze :D)  ;check if there is a wall in the down direction
+        (+ 20 minDist) ;if there is a wall between the player and the finish add 20 to the minDistance returned
+        minDist)   ;if no wall, return the min distance
       
-      (= minDist (float (- player-row finish-row))) 
+      (= minDist (float (- player-row finish-row))) ;same as above but for purely up
       (if (check-for-wall maze :U) 
         (+ 20 minDist) 
         minDist)
       
-      (= minDist (float (- finish-column player-column))) 
+      (= minDist (float (- finish-column player-column)))  ;same as above but for purely right
       (if (check-for-wall maze :R) 
         (+ 20 minDist) 
         minDist)
       
-      (= minDist (float(- player-column finish-column))) 
+      (= minDist (float(- player-column finish-column))) ;same as above but for purely left
       (if (check-for-wall maze :L) 
         (+ 20 minDist) 
         minDist)
       
-      :else minDist
+      :else minDist ;if not purely a direction, just return min distance
       )        
     ))    
-;tester.
-(def temp 
-'[[| | | | | | | | | |]
-  [| = = = | | _ _ _ |]
-  [| | | = | | _ | _ |]
-  [| | | = | | _ | _ |]
-  [| | | = = * _ | _ |]
-  [| | | | | | | | _ |]
-  [| | | | | F _ _ _ |]
-  [| | | | | | | | | |]])
-temp
-(get-distance-to-finish temp)
-
 
 
 (defn not-check-for-wall
-  "Checks if there is a wall in the direction of the attempted move. 
-   Returns true if there is a wall in the move-direction and false if there is not"
+  "Checks if there is not a wall in the direction of the attempted move and returns a boolean-move vector. 
+   Returns false as the first argument of the returned vectore if there is a wall
+   in the move-direction and true as the first argument if there is not. The second
+   argument is always the move... example vector returned [false :R]"
   [maze move]
   (let [player-column (first (get-player maze))
         player-row (second (get-player maze))]
     (cond
-      (= move :U) [(not (= '| (get-maze-symbol maze [(- player-column 1) player-row]))) :U]
+      (= move :U) [(not (= '| (get-maze-symbol maze [(- player-column 1) player-row]))) :U] ;simply notted check for wall
       (= move :D) [(not (= '| (get-maze-symbol maze [(+ player-column 1) player-row]))) :D]
       (= move :L) [(not (= '| (get-maze-symbol maze [player-column (- player-row 1)]))) :L]
       (= move :R) [(not (= '| (get-maze-symbol maze [player-column (+ player-row 1)]))) :R]
       )))
-;tester
-(not-check-for-wall maze1 :R)
-
-
-
 
 
 (defn check-for-breadcrumb
-  "Checks if there is a breadcrumb ('=) in the direction of the attempted move. 
-   Returns true and the opposite direction if there is a breadcrumb in the move-direction and false and the move direction if there is not"
+  "Checks if there is a breadcrumb ('=) in the direction of the attempted move and returns a boolean-move vector. 
+   Returns a vector [true and the opposite direction of move] if there is a breadcrumb
+   in the move-direction and [false and the move direction] if there is not"
   [maze move]
   (let [player-column (first (get-player maze))
         player-row (second (get-player maze))]
@@ -412,15 +372,13 @@ temp
                             :L
                             :R)])
       )))
-;tester
-
-
 
 
 (defn check-for-finish                                                                
-  "Checks if the finish direction is in the move direction. 
-   Returns true if the finish IS  in the move direction
-   Returns false if the finish IS NOT in the move direction"
+  "Checks if the finish direction is in the move direction and returns a boolean-move vector. 
+   Returns true as the first argument of the vector if the finish IS  
+   in the move direction of returns false as the first argument if the
+   finish IS NOT in the move direction. Second vector argument is always the move"
   [maze move]
   (let [distance (list-subtraction (get-finish maze) (get-player maze))
         up-dist (first distance)
@@ -432,24 +390,15 @@ temp
       (= move :R) [(and (> r-dist 0) (> r-dist (abs up-dist))) :R]
       (= move :L) [(and (< r-dist 0) (> (abs r-dist) (abs up-dist))) :L]
       )))
-;tester
-maze1
-(check-for-finish maze1 :R)
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
 ;                MOVE PLAYER START
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
 
 (defn switch-rows
-  "moves character between rows and leaves breadcrumbs."
+  "Moves character between rows and leaves breadcrumbs."
   [source destination col]
   (loop [new-source []
          new-destination []
@@ -462,9 +411,8 @@ maze1
                    (inc index)))))
 
 
-
 (defn switch-columns
-  "moves character to left or right and leaves breadcrumbs"
+  "Moves character to left or right and leaves breadcrumbs"
   [row character destination]
   (loop [new-row []
          index 0]
@@ -476,10 +424,8 @@ maze1
       :else (recur (conj new-row (nth row index)) (inc index)))))
 
 
-
-
-
 (defn move-player
+  "Moves the player in the maze and outputs a new maze or gamestate"
   [maze move]
   (let [player-column (second (get-player maze))
         player-row (first (get-player maze))]
@@ -532,32 +478,17 @@ maze1
                                  (recur (conj new-maze new-row) (inc row)))
             :else (recur (conj new-maze (nth maze row)) (inc row))))
         ))))
-;tester
-(move-player (move-player maze1 :R) :R)
-(move-player maze7 :D)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  
-    
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-;                            MOVE PLAYER END
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;;;;;;;;;;;;; evaluating programs
+;evaluating programs
 
 
 (defn program-to-fn                                                  ;this  will turn the prog above into an actual function using eval
-  "Takes a GP program represented as a list, with inputs wall-l 
-   wall-r wall-u wall-d finish-l finish-r finish-u finish-d,                  
+  "Takes a GP program represented as a list                 
    and transforms it into a function that can be called on an input."
   [program]                                                                
-  (eval (list 'fn                                                          ; is basiccally the same thing as doung (fn [x] program))
+  (eval (list 'fn                                                          
               '[wall-l
                 wall-r
                 wall-u
@@ -579,12 +510,8 @@ maze1
 
 
 (defn evaluate 
-  "Evaluates a program with a given x-value.
-   With 3 inputs, the first one should be map, second should be the program and
-   the thrid should be the desired range to map the function along.
-   With 4 inputs, the first is the map function, second is the program, third is the 
-   start of the range (inclusive), fourth is the end of the range function (exclusive)"
-  ([program gamestate last-move]   ; wall-l-check will return a vector (and all others will too
+  "Evaluates a program by calling functions for the symbols in the program tree."
+  ([program gamestate last-move]   ; check-for-wall will return a boolean-move vector (and all others will too)
     (let [prog-fn (program-to-fn program)]
       (prog-fn (check-for-wall gamestate :L)
                (check-for-wall gamestate :R)
@@ -606,20 +533,12 @@ maze1
       )
     )
   )
-;tester
-(evaluate 'last-move maze1 :L)
 
 
 (defn perform-program
   "Returns the move (second object in the vector) returned by evaluate"
   [program gamestate last-move]
   (second (evaluate program gamestate last-move)))
-;tester
-maze1
-(perform-program '(andd wall-r wall-d wall-d) (move-player maze1 :R) :R)
-(perform-program 'wall-l (move-player maze1 :R) :R)
-
-
 
 
 (defn print-maze
@@ -638,10 +557,6 @@ maze1
       )
     )
   )
-;tester
-(print-maze maze5)
-    
-
 
 
 (defn next-legal-move
@@ -668,16 +583,12 @@ maze1
         :L))
     )
   )
-;tester
-(move-player (move-player maze5 :R) :R)
-(next-legal-move (move-player (move-player maze5 :R) :R) :U)
-(next-legal-move (move-player maze1 :R) :L)
-(check-for-wall maze1 :R)
-
 
 
 (defn state-steps
-  "Prints the state of a maze after each move that a program produces"
+  "Prints the state of a maze after each move that a program produces.
+   Prints a message when the maze has been completed or when 50 moves 
+   have been made."
   [maze program]
   (let [finish (get-finish maze)]
     (loop [gamestate maze
@@ -701,21 +612,13 @@ maze1
       )
     )
   )
-;tester
-(state-steps maze1 'wall-l)
-(state-steps maze3 'wall-l)
-(state-steps maze5 'last-move)
-
-
-
          
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;;;;;;;;;;;;;;;;;;;;;  Initialization methods and helper functions  ;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(defn full                                        ; yay!!! full works
+(defn full                                        
   "Builds a function using Full method"
   [max-d]
   (cond
@@ -726,8 +629,7 @@ maze1
   )
 
 
-
-(defn grow                                                                   ; yay! grow works
+(defn grow                                                                   
   "Builds a function using Grow method, by returning one value at a time"
   [max-d]
   (let [d max-d
@@ -745,7 +647,6 @@ maze1
   )
 
 
-
 (defn ramped-h-h                                              
   "Builds a program tree using ramped half and half"
   []
@@ -759,17 +660,16 @@ maze1
 
 (defn generate-init-population
   [pop-size]
-  (take pop-size (repeatedly ramped-h-h)))               ;we used ramped-h-h to help vary the functions
+  (take pop-size (repeatedly ramped-h-h)))              
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; fitness functions
-;might need to edit this to optimize runs
 
 (defn program-fitness                                       ; fitness is shortest distance from finish *10 + # of moves >29 .. basically a simulator with just state
   "Returns the fitness of a program.
-   Fitness is based calculated by the equation:
+   Fitness is calculated by the equation:
    Shortest distance from the maze's finish * 10 + number of moves after 15 moves"
   [program maze]
    (let [finish (get-finish maze)]
@@ -783,13 +683,13 @@ maze1
         (cond
           (= finish player) moves>15
           (>= total-moves 30) (+ (* (min shortest-distance (get-distance-to-finish gamestate)) 10) moves>15)             ;min shortest moves and current position
-          :else (let [move (next-legal-move gamestate (perform-program program gamestate last-move))]                                                          ;30 moves used to calculate fitness but 50 when visualizing the moves          
+          :else (let [move (next-legal-move gamestate (perform-program program gamestate last-move))]                    ;30 moves used to calculate fitness but 50 when visualizing the moves          
             
                  (recur 
                    (move-player gamestate move)
                    (inc total-moves)
                    (if (>= total-moves 15)
-                     (inc moves>15)                         ;only increments the moves>20 (essentially fitness) if we have already made 20 moves
+                     (inc moves>15)                         ;only increments the moves>15 
                      moves>15)
                    (min shortest-distance (get-distance-to-finish gamestate))
                    move
@@ -800,36 +700,18 @@ maze1
       )
     )
   )
-;tester
-(def rand-prog (grow 2))
-rand-prog
-(state-steps maze5 rand-prog)
-(program-fitness rand-prog maze5)
 
 
 (defn population-fitness                                                  ;mostly helpful for visualization of best functions
   "Returns a list of the fitness of each individual population"
   [population maze]
   (map (fn [x] (program-fitness x maze)) population))
-;tester
-(population-fitness (generate-init-population 50) maze5)
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;parent selection
-
-
-(defn threshold-selection                       ;could use this functionn to reduce the population to 
-  ;semi-decent programs and then do tourni and such
-  "Returns a list of the individual programs in the population that have a fitness below or equal to the given
-   fitness value"
-  [value prog-pop maze]
-  (filter (fn [x] (<= (program-fitness x maze) value)) prog-pop))   ;we found that this function greatly reduces diversity in population, 
-;so we didnt include it in our genetic-programming fn but wanted it to
-;be in here in-case we needed it for the next project
-;tester
-(threshold-selection 50 (generate-init-population 10) maze5)
 
 
 (defn tournament-selection 
@@ -841,18 +723,13 @@ rand-prog
       (recur (inc i)
              (conj lst (rand-nth prog-pop)))
       (first (sort-by (fn [x] (program-fitness x maze)) lst)))))
-;tester
-(tournament-selection (generate-init-population 10) maze1)
 
 
 (defn best-n-progs                          ;this helps us guide our evolution towards better programs and also sorts programs 
   "Returns the best n number of programs from the given program population"
   [prog-pop n maze]
   (take n (sort-by (fn [x] (program-fitness x maze)) prog-pop)))
-;tester
-(def besties (best-n-progs (generate-init-population 20) 10 maze5))
-besties
-(population-fitness besties maze5)
+
 
 
 
@@ -889,8 +766,7 @@ besties
                                                            subtree-index)
       :else (recur (rest prog)
                    (- subtree-index (program-size (first prog)))))))
-;tester
-(select-random-subtree (full 3))
+
 
 
 (defn replace-random-subtree                                                                   ; basically pt mutation
@@ -912,9 +788,6 @@ besties
                      element))
                  prog
                  (cons 0 (reductions + (map program-size prog)))))))
-;tester
-(replace-random-subtree (full 2) 'dingly-dongly-doo)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -932,10 +805,6 @@ besties
    of max-depth 3"
   [program]
   (replace-random-subtree program (grow 3)))    ;arbitrarily selected max-depth 3
-;tester
-(def proggi (full 2))
-proggi
-(subtree-mutation proggi)
 
 
 (defn hoist-mutation                           ;helps with our bloat problem
@@ -943,9 +812,6 @@ proggi
    from the program"
   [program]
   (replace-random-subtree program (select-random-subtree program) 0))
-;tester
-proggi
-(hoist-mutation proggi)
 
 
 (defn pt-mutation
@@ -958,9 +824,6 @@ proggi
       (replace-random-subtree prog (rand-term) node) ;replace with rand terminal if terminal
       )
     ))
-;tester
-proggi
-(pt-mutation proggi)
 
 
 (defn cross-over
@@ -969,8 +832,7 @@ proggi
    random subtree in parent2"
   [parent1 parent2]
   (replace-random-subtree parent1 (select-random-subtree parent2)))
-;tester
-(cross-over proggi proggi)
+
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1029,17 +891,14 @@ proggi
       )
     )
   )
-;tester
-(def rand-gen (generate-init-population 3))
-rand-gen
-(mutate-generation rand-gen maze5)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
  
 ;main
 
 (defn genetic-programming
-  "This function only which maze you want to test the genetic programming on.
+  "This function only takes as an input which maze you want to test the genetic programming on.
    It generates an initial population size of 30, and produces
    new generations via different methods of mutation of population size 30.
    Each generation prints the generation number, the best program
@@ -1070,7 +929,6 @@ rand-gen
       )
     )
   )
-
 
 
 
