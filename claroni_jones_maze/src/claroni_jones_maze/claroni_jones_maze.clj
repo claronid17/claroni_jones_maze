@@ -700,7 +700,7 @@
     (if (not (>= i 7))
       (recur (inc i)
              (conj lst (rand-nth prog-pop)))
-      (first (take 1 (sort-by second lst)))))) ;since we are passing vectors through this, we only want to return bare programs (w/o fitness)
+      (first (first (take 1 (sort-by second lst))))))) ;outputs a list so we want to drill into the vector and then drill into the program itself (why we need first first)
 
 
 (defn pop-sorter                          ;this helps us guide our evolution towards better programs and also sorts programs 
@@ -849,22 +849,22 @@
           (< n 10) (recur  ;10% point mutation on a random program selected via tournament selection
                            
                            (rand-int 100)
-                           (conj next-gen (pt-mutation (first(tournament-selection pop maze))))
+                           (conj next-gen (pt-mutation (tournament-selection pop maze)))
                            (dec count))
           (< n 20) (recur ;10% sub-tree mutation on a random program selected via tournament selection
                           
                           (rand-int 100)
-                          (conj next-gen (subtree-mutation (first(tournament-selection pop maze))))
+                          (conj next-gen (subtree-mutation (tournament-selection pop maze)))
                           (dec count))
           (< n 75) (recur ;55% cross over on two random programs selected via tournament selection
                           
                           (rand-int 100)
-                          (conj next-gen (cross-over (first(tournament-selection pop maze)) (first(tournament-selection pop maze))))
+                          (conj next-gen (cross-over (tournament-selection pop maze) (tournament-selection pop maze)))
                           (dec count))
           (< n 95) (recur ;20% hoist mutation on a random program selected via tourny selection 
                           
                           (rand-int 100)
-                          (conj next-gen (hoist-mutation (first(tournament-selection pop maze))))
+                          (conj next-gen (hoist-mutation (tournament-selection pop maze)))
                           (dec count))
           (< n 98) (recur ;3% ramped-h-h 
                           
@@ -874,7 +874,7 @@
           (< n 100) (recur ;2% replication
                            
                            (rand-int 100)
-                           (conj next-gen (replication (first(tournament-selection pop maze))))
+                           (conj next-gen (replication (tournament-selection pop maze)))
                            (dec count))
           )
         )
@@ -908,7 +908,7 @@
       (println "\n############################################################\n")
       (cond 
         (<= best-err 15) (println "*****Solution Found!*****\n Solution is:" best-prog "\n") ;if the error is less than 15 that means it has solved the maze in atleast 30 moves. which is our criteria for termination
-        (= gen-number 50) (println "Max generations reached (" gen-number
+        (= gen-number 50) (println "Max generations reached (" gen-number                           ;none of our mazes take more than 20 moves to solve on the shortest path... if we made bigger mazes we would have to increase this number
                                    ").\nBest program:" best-prog
                                    "\nIt's error:" best-err 
                                    "\n\n############################################################\n")
